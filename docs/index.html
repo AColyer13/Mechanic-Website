@@ -673,6 +673,37 @@
             return API_URL;
         }
 
+        // Parse fetch responses and produce rich errors for UI (handles 404, 308, etc.)
+        async function parseResponse(response, context = '') {
+            const text = await response.text();
+            let data = null;
+            try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+            if (!response.ok) {
+                let message = `HTTP ${response.status} ${response.statusText}`;
+                if (response.status === 404) {
+                    message += ` — Not Found. ${context} The requested resource doesn't exist or the ID/URL is incorrect.`;
+                } else if (response.status === 308) {
+                    message += ` — Permanent Redirect. The server is redirecting (likely the endpoint expects a trailing slash). Use the correct endpoint URL with a trailing slash.`;
+                } else if (response.status === 409) {
+                    message += ` — Conflict. ${data && data.error ? data.error : ''}`;
+                }
+                if (data) {
+                    try {
+                        const extra = typeof data === 'string' ? data : (data.error || JSON.stringify(data));
+                        if (extra) message += ` Response: ${extra}`;
+                    } catch (e) {}
+                }
+
+                const err = new Error(message);
+                err.status = response.status;
+                err.response = data;
+                throw err;
+            }
+
+            return data;
+        }
+
         function updateAuthStatus() {
             const authMessage = document.getElementById('auth-message');
             const authRequiredSections = document.querySelectorAll('.auth-required');
@@ -735,11 +766,7 @@
                     body: JSON.stringify({ email, password })
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'retrieving customers');
                 authToken = data.token;
                 loggedInCustomer = data.customer;
                 
@@ -779,11 +806,7 @@
                     }
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'fetching login result');
                 
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No tickets found.</p>';
@@ -822,11 +845,7 @@
             try {
                 const response = await fetch(`${getApiUrl()}/customers/?_=${Date.now()}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'retrieving my tickets');
                 
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No customers found.</p>';
@@ -891,11 +910,7 @@
                     body: JSON.stringify(customerData)
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'retrieving mechanics');
                 resultDiv.innerHTML = `<div class="success">Customer added successfully! ID: ${data.id}</div>`;
                 
                 // Clear form
@@ -921,11 +936,7 @@
             try {
                 const response = await fetch(`${getApiUrl()}/mechanics/?_=${Date.now()}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'adding mechanic');
                 
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No mechanics found.</p>';
@@ -988,11 +999,7 @@
                     body: JSON.stringify(mechanicData)
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'getting mechanic by id');
                 resultDiv.innerHTML = `<div class="success">Mechanic added successfully! ID: ${data.id}</div>`;
                 
                 // Clear form
@@ -1019,11 +1026,7 @@
             try {
                 const response = await fetch(`${getApiUrl()}/inventory/?_=${Date.now()}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'updating mechanic');
                 
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No inventory items found.</p>';
@@ -1059,11 +1062,7 @@
             try {
                 const response = await fetch(`${getApiUrl()}/service-tickets/?_=${Date.now()}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'deleting mechanic');
                 
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No service tickets found.</p>';
@@ -1189,11 +1188,7 @@
                     body: JSON.stringify(updateData)
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+                const data = await parseResponse(response, 'creating inventory item');
                 resultDiv.innerHTML = `<div class="success">✅ Customer updated successfully!</div>`;
                 
                 // Clear form
