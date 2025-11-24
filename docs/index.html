@@ -229,6 +229,10 @@
                     <input type="email" id="updateCustomerEmail" placeholder="Leave blank to keep current">
                 </div>
                 <div class="form-group">
+                    <label for="updateCustomerPassword">Password (optional):</label>
+                    <input type="password" id="updateCustomerPassword" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
                     <label for="updateCustomerPhone">Phone (optional):</label>
                     <input type="tel" id="updateCustomerPhone" placeholder="Leave blank to keep current">
                 </div>
@@ -336,6 +340,10 @@
                     <label for="mechanicHourlyRate">Hourly Rate (optional):</label>
                     <input type="number" step="0.01" id="mechanicHourlyRate" placeholder="85.00">
                 </div>
+                <div class="form-group">
+                    <label for="mechanicHireDate">Hire Date (optional):</label>
+                    <input type="date" id="mechanicHireDate" placeholder="2024-01-15">
+                </div>
                 <button onclick="addMechanic()">Add Mechanic</button>
                 <div id="add-mechanic-result"></div>
             </div>
@@ -380,6 +388,10 @@
                     <label for="updateMechanicHourlyRate">Hourly Rate (optional):</label>
                     <input type="number" step="0.01" id="updateMechanicHourlyRate" placeholder="Leave blank to keep current">
                 </div>
+                <div class="form-group">
+                    <label for="updateMechanicHireDate">Hire Date (optional):</label>
+                    <input type="date" id="updateMechanicHireDate" placeholder="Leave blank to keep current">
+                </div>
                 <button onclick="updateMechanic()">Update Mechanic</button>
                 <div id="update-mechanic-result"></div>
             </div>
@@ -408,6 +420,18 @@
                 <div class="form-group">
                     <label for="inventoryPartName">Part Name:</label>
                     <input type="text" id="inventoryPartName" placeholder="Oil Filter">
+                </div>
+                <div class="form-group">
+                    <label for="inventorySku">SKU (optional):</label>
+                    <input type="text" id="inventorySku" placeholder="OF-1234">
+                </div>
+                <div class="form-group">
+                    <label for="inventorySupplier">Supplier (optional):</label>
+                    <input type="text" id="inventorySupplier" placeholder="ACME Parts">
+                </div>
+                <div class="form-group">
+                    <label for="inventoryDescription">Description (optional):</label>
+                    <input type="text" id="inventoryDescription" placeholder="High-quality oil filter">
                 </div>
                 <div class="form-group">
                     <label for="inventoryQuantity">Quantity:</label>
@@ -440,6 +464,18 @@
                 <div class="form-group">
                     <label for="updateInventoryPartName">Part Name (optional):</label>
                     <input type="text" id="updateInventoryPartName" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateInventorySku">SKU (optional):</label>
+                    <input type="text" id="updateInventorySku" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateInventorySupplier">Supplier (optional):</label>
+                    <input type="text" id="updateInventorySupplier" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateInventoryDescription">Description (optional):</label>
+                    <input type="text" id="updateInventoryDescription" placeholder="Leave blank to keep current">
                 </div>
                 <div class="form-group">
                     <label for="updateInventoryQuantity">Quantity (optional):</label>
@@ -499,6 +535,10 @@
                     <input type="text" id="ticketVehicleVin" placeholder="1HGBH41JXMN109186">
                 </div>
                 <div class="form-group">
+                    <label for="ticketMechanicId">Assign Mechanic (optional):</label>
+                    <input type="number" id="ticketMechanicId" placeholder="Mechanic ID">
+                </div>
+                <div class="form-group">
                     <label for="ticketEstimatedCost">Estimated Cost (optional):</label>
                     <input type="number" step="0.01" id="ticketEstimatedCost" placeholder="150.00">
                 </div>
@@ -534,6 +574,26 @@
                 <div class="form-group">
                     <label for="updateTicketDescription">Description (optional):</label>
                     <input type="text" id="updateTicketDescription" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateTicketVehicleYear">Vehicle Year (optional):</label>
+                    <input type="number" id="updateTicketVehicleYear" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateTicketVehicleMake">Vehicle Make (optional):</label>
+                    <input type="text" id="updateTicketVehicleMake" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateTicketVehicleModel">Vehicle Model (optional):</label>
+                    <input type="text" id="updateTicketVehicleModel" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateTicketVehicleVin">Vehicle VIN (optional):</label>
+                    <input type="text" id="updateTicketVehicleVin" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateTicketEstimatedCost">Estimated Cost (optional):</label>
+                    <input type="number" step="0.01" id="updateTicketEstimatedCost" placeholder="Leave blank to keep current">
                 </div>
                 <div class="form-group">
                     <label for="updateTicketActualCost">Actual Cost (optional):</label>
@@ -901,6 +961,7 @@
             const phone = document.getElementById('mechanicPhone').value;
             const specialty = document.getElementById('mechanicSpecialty').value;
             const hourlyRate = document.getElementById('mechanicHourlyRate').value;
+            const hireDate = document.getElementById('mechanicHireDate') ? document.getElementById('mechanicHireDate').value : '';
             
             if (!firstName || !lastName || !email) {
                 resultDiv.innerHTML = '<div class="error">Please fill in all required fields!</div>';
@@ -916,6 +977,7 @@
             if (phone) mechanicData.phone = phone;
             if (specialty) mechanicData.specialty = specialty;
             if (hourlyRate) mechanicData.hourly_rate = parseFloat(hourlyRate);
+            if (hireDate) mechanicData.hire_date = hireDate;
             
             try {
                 const response = await fetch(`${getApiUrl()}/mechanics/`, {
@@ -940,6 +1002,7 @@
                 document.getElementById('mechanicPhone').value = '';
                 document.getElementById('mechanicSpecialty').value = '';
                 document.getElementById('mechanicHourlyRate').value = '';
+                document.getElementById('mechanicHireDate').value = '';
                 
                 // Refresh mechanic list
                 setTimeout(() => getAllMechanics(), 1000);
@@ -971,9 +1034,12 @@
                 data.forEach(item => {
                     html += `
                         <div class="customer-card">
-                            <h3>${item.part_name}</h3>
+                            <h3>${item.name || item.part_name}</h3>
                             <p>📦 Quantity: ${item.quantity}</p>
                             <p>💲 Price: $${item.price}</p>
+                            ${item.sku ? `<p>🔖 SKU: ${item.sku}</p>` : ''}
+                            ${item.supplier ? `<p>🏷️ Supplier: ${item.supplier}</p>` : ''}
+                            ${item.description ? `<p>📝 ${item.description}</p>` : ''}
                             <p>🆔 Part ID: ${item.id}</p>
                         </div>
                     `;
@@ -1091,6 +1157,7 @@
             const firstName = document.getElementById('updateCustomerFirstName').value;
             const lastName = document.getElementById('updateCustomerLastName').value;
             const email = document.getElementById('updateCustomerEmail').value;
+            const password = document.getElementById('updateCustomerPassword') ? document.getElementById('updateCustomerPassword').value : '';
             const phone = document.getElementById('updateCustomerPhone').value;
             const address = document.getElementById('updateCustomerAddress').value;
             
@@ -1103,6 +1170,7 @@
             if (firstName) updateData.first_name = firstName;
             if (lastName) updateData.last_name = lastName;
             if (email) updateData.email = email;
+            if (password) updateData.password = password;
             if (phone) updateData.phone = phone;
             if (address) updateData.address = address;
             
@@ -1133,6 +1201,7 @@
                 document.getElementById('updateCustomerFirstName').value = '';
                 document.getElementById('updateCustomerLastName').value = '';
                 document.getElementById('updateCustomerEmail').value = '';
+                document.getElementById('updateCustomerPassword').value = '';
                 document.getElementById('updateCustomerPhone').value = '';
                 document.getElementById('updateCustomerAddress').value = '';
             } catch (error) {
@@ -1234,6 +1303,7 @@
             const phone = document.getElementById('updateMechanicPhone').value;
             const specialty = document.getElementById('updateMechanicSpecialty').value;
             const hourlyRate = document.getElementById('updateMechanicHourlyRate').value;
+            const hireDate = document.getElementById('updateMechanicHireDate') ? document.getElementById('updateMechanicHireDate').value : '';
             
             if (!mechanicId) {
                 resultDiv.innerHTML = '<div class="error">Please enter a mechanic ID!</div>';
@@ -1247,6 +1317,7 @@
             if (phone) updateData.phone = phone;
             if (specialty) updateData.specialty = specialty;
             if (hourlyRate) updateData.hourly_rate = parseFloat(hourlyRate);
+            if (hireDate) updateData.hire_date = hireDate;
             
             if (Object.keys(updateData).length === 0) {
                 resultDiv.innerHTML = '<div class="error">Please enter at least one field to update!</div>';
@@ -1276,6 +1347,7 @@
                 document.getElementById('updateMechanicPhone').value = '';
                 document.getElementById('updateMechanicSpecialty').value = '';
                 document.getElementById('updateMechanicHourlyRate').value = '';
+                document.getElementById('updateMechanicHireDate').value = '';
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1324,6 +1396,9 @@
         async function addInventoryItem() {
             const resultDiv = document.getElementById('add-inventory-result');
             const partName = document.getElementById('inventoryPartName').value;
+            const sku = document.getElementById('inventorySku').value;
+            const supplier = document.getElementById('inventorySupplier').value;
+            const description = document.getElementById('inventoryDescription').value;
             const quantity = document.getElementById('inventoryQuantity').value;
             const price = document.getElementById('inventoryPrice').value;
             
@@ -1333,16 +1408,22 @@
             }
             
             try {
+                const body = {
+                    name: partName,
+                    part_name: partName,
+                    quantity: parseInt(quantity),
+                    price: parseFloat(price)
+                };
+                if (sku) body.sku = sku;
+                if (supplier) body.supplier = supplier;
+                if (description) body.description = description;
+
                 const response = await fetch(`${getApiUrl()}/inventory/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        part_name: partName,
-                        quantity: parseInt(quantity),
-                        price: parseFloat(price)
-                    })
+                    body: JSON.stringify(body)
                 });
                 
                 if (!response.ok) {
@@ -1356,6 +1437,9 @@
                 document.getElementById('inventoryPartName').value = '';
                 document.getElementById('inventoryQuantity').value = '';
                 document.getElementById('inventoryPrice').value = '';
+                document.getElementById('inventorySku').value = '';
+                document.getElementById('inventorySupplier').value = '';
+                document.getElementById('inventoryDescription').value = '';
                 
                 // Refresh inventory list
                 setTimeout(() => getAllInventory(), 500);
@@ -1386,9 +1470,12 @@
                 
                 resultDiv.innerHTML = `
                     <div class="customer-card">
-                        <h3>${item.part_name}</h3>
+                        <h3>${item.name || item.part_name}</h3>
                         <p>📦 Quantity: ${item.quantity}</p>
                         <p>💲 Price: $${item.price}</p>
+                        ${item.sku ? `<p>🔖 SKU: ${item.sku}</p>` : ''}
+                        ${item.supplier ? `<p>🏷️ Supplier: ${item.supplier}</p>` : ''}
+                        ${item.description ? `<p>📝 ${item.description}</p>` : ''}
                         <p>🆔 Part ID: ${item.id}</p>
                     </div>
                 `;
@@ -1401,6 +1488,9 @@
             const resultDiv = document.getElementById('update-inventory-result');
             const inventoryId = document.getElementById('updateInventoryId').value;
             const partName = document.getElementById('updateInventoryPartName').value;
+            const sku = document.getElementById('updateInventorySku').value;
+            const supplier = document.getElementById('updateInventorySupplier').value;
+            const description = document.getElementById('updateInventoryDescription').value;
             const quantity = document.getElementById('updateInventoryQuantity').value;
             const price = document.getElementById('updateInventoryPrice').value;
             
@@ -1410,7 +1500,10 @@
             }
             
             const updateData = {};
-            if (partName) updateData.part_name = partName;
+            if (partName) { updateData.name = partName; updateData.part_name = partName; }
+            if (sku) updateData.sku = sku;
+            if (supplier) updateData.supplier = supplier;
+            if (description) updateData.description = description;
             if (quantity) updateData.quantity = parseInt(quantity);
             if (price) updateData.price = parseFloat(price);
             
@@ -1437,6 +1530,9 @@
                 // Clear form
                 document.getElementById('updateInventoryId').value = '';
                 document.getElementById('updateInventoryPartName').value = '';
+                document.getElementById('updateInventorySku').value = '';
+                document.getElementById('updateInventorySupplier').value = '';
+                document.getElementById('updateInventoryDescription').value = '';
                 document.getElementById('updateInventoryQuantity').value = '';
                 document.getElementById('updateInventoryPrice').value = '';
             } catch (error) {
@@ -1492,6 +1588,7 @@
             const vehicleMake = document.getElementById('ticketVehicleMake').value;
             const vehicleModel = document.getElementById('ticketVehicleModel').value;
             const vehicleVin = document.getElementById('ticketVehicleVin').value;
+            const mechanicId = document.getElementById('ticketMechanicId') ? document.getElementById('ticketMechanicId').value : '';
             const estimatedCost = document.getElementById('ticketEstimatedCost').value;
             const status = document.getElementById('ticketStatus').value;
             
@@ -1510,6 +1607,7 @@
             if (vehicleMake) ticketData.vehicle_make = vehicleMake;
             if (vehicleModel) ticketData.vehicle_model = vehicleModel;
             if (vehicleVin) ticketData.vehicle_vin = vehicleVin;
+            if (mechanicId) ticketData.mechanic_id = parseInt(mechanicId);
             if (estimatedCost) ticketData.estimated_cost = parseFloat(estimatedCost);
             
             try {
@@ -1601,6 +1699,11 @@
             const description = document.getElementById('updateTicketDescription').value;
             const actualCost = document.getElementById('updateTicketActualCost').value;
             const status = document.getElementById('updateTicketStatus').value;
+            const vehicleYear = document.getElementById('updateTicketVehicleYear').value;
+            const vehicleMake = document.getElementById('updateTicketVehicleMake').value;
+            const vehicleModel = document.getElementById('updateTicketVehicleModel').value;
+            const vehicleVin = document.getElementById('updateTicketVehicleVin').value;
+            const estimatedCost = document.getElementById('updateTicketEstimatedCost').value;
             
             if (!ticketId) {
                 resultDiv.innerHTML = '<div class="error">Please enter a ticket ID!</div>';
@@ -1611,6 +1714,11 @@
             if (description) updateData.description = description;
             if (actualCost) updateData.actual_cost = parseFloat(actualCost);
             if (status) updateData.status = status;
+            if (vehicleYear) updateData.vehicle_year = parseInt(vehicleYear);
+            if (vehicleMake) updateData.vehicle_make = vehicleMake;
+            if (vehicleModel) updateData.vehicle_model = vehicleModel;
+            if (vehicleVin) updateData.vehicle_vin = vehicleVin;
+            if (estimatedCost) updateData.estimated_cost = parseFloat(estimatedCost);
             
             if (Object.keys(updateData).length === 0) {
                 resultDiv.innerHTML = '<div class="error">Please enter at least one field to update!</div>';
@@ -1637,6 +1745,11 @@
                 document.getElementById('updateTicketDescription').value = '';
                 document.getElementById('updateTicketActualCost').value = '';
                 document.getElementById('updateTicketStatus').value = '';
+                document.getElementById('updateTicketVehicleYear').value = '';
+                document.getElementById('updateTicketVehicleMake').value = '';
+                document.getElementById('updateTicketVehicleModel').value = '';
+                document.getElementById('updateTicketVehicleVin').value = '';
+                document.getElementById('updateTicketEstimatedCost').value = '';
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
