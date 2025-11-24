@@ -744,7 +744,12 @@
             resultDiv.innerHTML = '<div class="loading">Loading customers...</div>';
             
             try {
-                const response = await fetch(`${getApiUrl()}/customers/`);
+                const response = await fetch(`${getApiUrl()}/customers/`, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -843,7 +848,12 @@
             resultDiv.innerHTML = '<div class="loading">Loading mechanics...</div>';
             
             try {
-                const response = await fetch(`${getApiUrl()}/mechanics/`);
+                const response = await fetch(`${getApiUrl()}/mechanics/`, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -938,7 +948,12 @@
             resultDiv.innerHTML = '<div class="loading">Loading inventory...</div>';
             
             try {
-                const response = await fetch(`${getApiUrl()}/inventory/`);
+                const response = await fetch(`${getApiUrl()}/inventory/`, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -975,7 +990,12 @@
             resultDiv.innerHTML = '<div class="loading">Loading service tickets...</div>';
             
             try {
-                const response = await fetch(`${getApiUrl()}/service-tickets/`);
+                const response = await fetch(`${getApiUrl()}/service-tickets/`, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
