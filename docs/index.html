@@ -162,6 +162,14 @@
         .tab-content.active {
             display: block;
         }
+        
+        .auth-required {
+            display: none;
+        }
+        
+        .auth-required.logged-in {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -196,10 +204,50 @@
                 <div id="login-result"></div>
             </div>
             
-            <div class="section">
-                <h2>🎫 My Service Tickets (Login Required)</h2>
+            <div class="section auth-required" id="my-tickets-section">
+                <h2>🎫 My Service Tickets</h2>
                 <button onclick="getMyTickets()">Get My Tickets</button>
                 <div id="my-tickets-list" class="results"></div>
+            </div>
+            
+            <div class="section auth-required" id="update-customer-section">
+                <h2>✏️ Update My Profile</h2>
+                <div class="form-group">
+                    <label for="updateCustomerId">Customer ID:</label>
+                    <input type="number" id="updateCustomerId" placeholder="1">
+                </div>
+                <div class="form-group">
+                    <label for="updateCustomerFirstName">First Name (optional):</label>
+                    <input type="text" id="updateCustomerFirstName" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateCustomerLastName">Last Name (optional):</label>
+                    <input type="text" id="updateCustomerLastName" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateCustomerEmail">Email (optional):</label>
+                    <input type="email" id="updateCustomerEmail" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateCustomerPhone">Phone (optional):</label>
+                    <input type="tel" id="updateCustomerPhone" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-group">
+                    <label for="updateCustomerAddress">Address (optional):</label>
+                    <input type="text" id="updateCustomerAddress" placeholder="Leave blank to keep current">
+                </div>
+                <button onclick="updateCustomer()">Update Customer</button>
+                <div id="update-customer-result"></div>
+            </div>
+            
+            <div class="section auth-required" id="delete-customer-section">
+                <h2>🗑️ Delete My Account</h2>
+                <div class="form-group">
+                    <label for="deleteCustomerId">Customer ID:</label>
+                    <input type="number" id="deleteCustomerId" placeholder="1">
+                </div>
+                <button onclick="deleteCustomer()" style="background: #c33;">Delete Customer</button>
+                <div id="delete-customer-result"></div>
             </div>
         </div>
         
@@ -251,45 +299,7 @@
                 <div id="get-customer-result" class="results"></div>
             </div>
             
-            <div class="section">
-                <h2>Update Customer (Login Required)</h2>
-                <div class="form-group">
-                    <label for="updateCustomerId">Customer ID:</label>
-                    <input type="number" id="updateCustomerId" placeholder="1">
-                </div>
-                <div class="form-group">
-                    <label for="updateCustomerFirstName">First Name (optional):</label>
-                    <input type="text" id="updateCustomerFirstName" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateCustomerLastName">Last Name (optional):</label>
-                    <input type="text" id="updateCustomerLastName" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateCustomerEmail">Email (optional):</label>
-                    <input type="email" id="updateCustomerEmail" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateCustomerPhone">Phone (optional):</label>
-                    <input type="tel" id="updateCustomerPhone" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateCustomerAddress">Address (optional):</label>
-                    <input type="text" id="updateCustomerAddress" placeholder="Leave blank to keep current">
-                </div>
-                <button onclick="updateCustomer()">Update Customer</button>
-                <div id="update-customer-result"></div>
-            </div>
-            
-            <div class="section">
-                <h2>Delete Customer (Login Required)</h2>
-                <div class="form-group">
-                    <label for="deleteCustomerId">Customer ID:</label>
-                    <input type="number" id="deleteCustomerId" placeholder="1">
-                </div>
-                <button onclick="deleteCustomer()" style="background: #c33;">Delete Customer</button>
-                <div id="delete-customer-result"></div>
-            </div>
+
         </div>
         
         <!-- Mechanics Tab -->
@@ -615,12 +625,28 @@
 
         function updateAuthStatus() {
             const authMessage = document.getElementById('auth-message');
+            const authRequiredSections = document.querySelectorAll('.auth-required');
+            
             if (authToken && loggedInCustomer) {
                 authMessage.innerHTML = `🔐 Logged in as: ${loggedInCustomer.email}`;
                 authMessage.style.background = '#e0ffe0';
+                
+                // Show auth-required sections
+                authRequiredSections.forEach(section => {
+                    section.classList.add('logged-in');
+                });
+                
+                // Auto-fill customer ID in update and delete forms
+                document.getElementById('updateCustomerId').value = loggedInCustomer.id;
+                document.getElementById('deleteCustomerId').value = loggedInCustomer.id;
             } else {
                 authMessage.innerHTML = '🔓 Not logged in';
                 authMessage.style.background = '#f0f0f0';
+                
+                // Hide auth-required sections
+                authRequiredSections.forEach(section => {
+                    section.classList.remove('logged-in');
+                });
             }
         }
 
