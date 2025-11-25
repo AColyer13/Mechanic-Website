@@ -15,7 +15,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 1rem;
+            line-height: 1.6;
         }
 
         .container {
@@ -24,135 +25,186 @@
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 30px;
+            padding: 2rem;
+            overflow-x: hidden;
         }
 
         h1 {
             color: #333;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 1rem;
+            font-size: 2rem;
         }
 
         .section {
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
             background: #f8f9fa;
             border-radius: 10px;
         }
 
         .section h2 {
             color: #667eea;
-            margin-bottom: 15px;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 1rem;
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
             color: #555;
             font-weight: 500;
+            font-size: 1rem;
         }
 
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 0.75rem;
             border: 1px solid #ddd;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
 
         button {
             background: #667eea;
             color: white;
-            padding: 12px 30px;
+            padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            min-height: 44px; /* Touch-friendly */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button:hover {
             background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
+        }
+
+        .refresh-btn {
+            float: right;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
         }
 
         .results {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 1.5rem;
+            padding: 1rem;
             background: white;
             border-radius: 5px;
             max-height: 400px;
             overflow-y: auto;
+            border: 1px solid #e9ecef;
         }
 
-        .customer-card {
-            padding: 15px;
-            margin-bottom: 10px;
+        .data-card {
+            padding: 1rem;
+            margin-bottom: 1rem;
             background: #f8f9fa;
             border-left: 4px solid #667eea;
             border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .customer-card h3 {
+        .data-card h3 {
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
         }
 
-        .customer-card p {
+        .data-card p {
             color: #666;
-            font-size: 14px;
-            margin: 3px 0;
+            font-size: 0.9rem;
+            margin: 0.25rem 0;
         }
 
         .error {
             background: #fee;
             color: #c33;
-            padding: 15px;
+            padding: 1rem;
             border-radius: 5px;
-            margin-top: 10px;
+            margin-top: 1rem;
+            border: 1px solid #f5c6cb;
         }
 
         .success {
             background: #efe;
             color: #3c3;
-            padding: 15px;
+            padding: 1rem;
             border-radius: 5px;
-            margin-top: 10px;
+            margin-top: 1rem;
+            border: 1px solid #c3e6cb;
         }
 
         .loading {
             text-align: center;
             color: #667eea;
-            padding: 20px;
+            padding: 2rem;
+            font-size: 1.1rem;
         }
 
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
             flex-wrap: wrap;
+            justify-content: center;
         }
 
         .tab {
-            padding: 10px 20px;
+            padding: 0.75rem 1rem;
             background: #e0e0e0;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            min-height: 44px;
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
         }
 
         .tab.active {
             background: #667eea;
             color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab:hover {
+            background: #d0d0d0;
+        }
+
+        .tab.active:hover {
+            background: #5568d3;
         }
 
         .tab-content {
@@ -171,81 +223,170 @@
             display: block;
         }
 
-        /* 4K monitors (3840px and up) */
-        @media (min-width: 2560px) {
+        /* Responsive Design */
+        @media (max-width: 1200px) {
             .container {
-                max-width: 2200px;
-                padding: 60px;
-                font-size: 1.5rem;
-            }
-            h1 {
-                font-size: 3rem;
-            }
-            .tab {
-                font-size: 1.5rem;
+                max-width: 95vw;
+                padding: 1.5rem;
             }
         }
 
-        /* 1600p laptops (e.g., 2560x1600) */
-        @media (min-width: 1600px) and (max-width: 2559px) {
-            .container {
-                max-width: 1600px;
-                padding: 40px;
-                font-size: 1.2rem;
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
             }
-            h1 {
-                font-size: 2.2rem;
-            }
-            .tab {
-                font-size: 1.2rem;
-            }
-        }
-
-        /* Tablets (portrait/landscape) */
-        @media (max-width: 1024px) {
-            .container {
-                max-width: 98vw;
-                padding: 10px;
-            }
-            .section {
-                padding: 10px;
-            }
-            h1 {
-                font-size: 1.5rem;
-            }
-            .tab {
-                font-size: 1rem;
-                padding: 8px 12px;
-            }
-            input, select, button {
-                font-size: 1rem;
-            }
-        }
-
-        /* Mobile phones */
-        @media (max-width: 600px) {
+            
             .container {
                 max-width: 100vw;
-                padding: 2vw;
+                padding: 1rem;
                 border-radius: 0;
                 box-shadow: none;
             }
-            .section {
-                padding: 6px;
-            }
+            
             h1 {
-                font-size: 1.1rem;
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
             }
+            
+            .section {
+                margin-bottom: 1.5rem;
+                padding: 1rem;
+            }
+            
+            .section h2 {
+                font-size: 1.2rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .tabs {
+                gap: 0.25rem;
+                margin-bottom: 1.5rem;
+            }
+            
             .tab {
-                font-size: 0.95rem;
-                padding: 6px 6px;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+                min-width: 100px;
+                max-width: none;
+                flex: 1 1 auto;
             }
+            
+            .form-group {
+                margin-bottom: 0.75rem;
+            }
+            
+            label {
+                font-size: 0.9rem;
+            }
+            
             input, select, button {
-                font-size: 0.95rem;
+                font-size: 0.9rem;
+                padding: 0.625rem;
             }
+            
+            button {
+                padding: 0.625rem 1rem;
+                min-height: 40px;
+            }
+            
+            .refresh-btn {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+                margin-bottom: 0.5rem;
+            }
+            
             .results {
-                padding: 6px;
-                max-height: 200px;
+                padding: 0.75rem;
+                max-height: 300px;
+            }
+            
+            .data-card {
+                padding: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .data-card h3 {
+                font-size: 1rem;
+            }
+            
+            .data-card p {
+                font-size: 0.85rem;
+            }
+            
+            .loading {
+                padding: 1.5rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.5rem;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+            }
+            
+            .section {
+                padding: 0.75rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tab {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+                min-height: 36px;
+            }
+            
+            input, select, button {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+            
+            button {
+                min-height: 36px;
+            }
+            
+            .data-card {
+                padding: 0.5rem;
+            }
+            
+            .results {
+                max-height: 250px;
+            }
+        }
+
+        /* High DPI displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .data-card {
+                border-left-width: 3px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .tabs, button, input, select {
+                display: none !important;
+            }
+            
+            .results {
+                max-height: none;
+                overflow: visible;
             }
         }
     </style>
@@ -489,8 +630,8 @@
         <div id="inventory-tab" class="tab-content">
             <div class="section">
                 <h2>View Inventory</h2>
-                <button onclick="getAllInventory()">Get All Items</button>
-                <div id="inventory-list" class="results"></div>
+                <button id="toggle-inventory-btn" onclick="toggleInventoryList()">Get All Items</button>
+                <div id="inventory-list" class="results" style="display:none;"></div>
             </div>
             
             <div class="section">
@@ -710,6 +851,147 @@
     </div>
 
     <script>
+                // Toggle inventory list visibility and fetch if needed
+                let inventoryVisible = false;
+                async function toggleInventoryList() {
+                    const btn = document.getElementById('toggle-inventory-btn');
+                    const list = document.getElementById('inventory-list');
+                    if (!inventoryVisible) {
+                        // Show and fetch
+                        btn.textContent = 'Hide';
+                        list.style.display = '';
+                        await getAllInventory();
+                        inventoryVisible = true;
+                    } else {
+                        // Hide
+                        btn.textContent = 'Get All Items';
+                        list.style.display = 'none';
+                        inventoryVisible = false;
+                    }
+                }
+        // ===== PRELOAD VARIABLES =====
+        const preloadedData = {
+            customers: null,
+            mechanics: null,
+            inventory: null,
+            tickets: null
+        };
+
+        // ===== CACHE DOM ELEMENTS =====
+        const domElements = {
+            customersList: document.getElementById('customers-list'),
+            mechanicsList: document.getElementById('mechanics-list'),
+            inventoryList: document.getElementById('inventory-list'),
+            ticketsList: document.getElementById('tickets-list')
+        };
+
+        // ===== GENERIC GET ALL FUNCTION =====
+        async function getAllData(type, usePreload = true) {
+            const resultDiv = domElements[`${type}List`];
+            resultDiv.innerHTML = '<div class="loading">Loading...</div>';
+            let data = null;
+            try {
+                if (usePreload && preloadedData[type]) {
+                    data = preloadedData[type];
+                } else {
+                    const response = await fetch(`${getApiUrl()}/${type === 'tickets' ? 'service-tickets' : type}/?_=${Date.now()}`);
+                    data = await parseResponse(response, `retrieving all ${type}`);
+                    preloadedData[type] = data;
+                }
+                if (!data || data.length === 0) {
+                    resultDiv.innerHTML = '<div class="error">No data found.</div>';
+                    return;
+                }
+                const refreshButton = `<button onclick="refreshData('${type}')" class="refresh-btn">🔄 Refresh</button>`;
+                const html = refreshButton + renderDataList(type, data);
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // ===== RENDER DATA LIST =====
+        function renderDataList(type, data) {
+            const renderers = {
+                customers: (item) => `<div class="data-card">
+                    <h3>${item.first_name} ${item.last_name}</h3>
+                    <p><b>ID:</b> ${item.id}</p>
+                    <p><b>Email:</b> ${item.email}</p>
+                    <p><b>Phone:</b> ${item.phone || ''}</p>
+                    <p><b>Address:</b> ${item.address || ''}</p>
+                </div>`,
+                mechanics: (item) => `<div class="data-card">
+                    <h3>${item.first_name} ${item.last_name}</h3>
+                    <p><b>ID:</b> ${item.id}</p>
+                    <p><b>Email:</b> ${item.email}</p>
+                    <p><b>Phone:</b> ${item.phone || ''}</p>
+                    <p><b>Specialty:</b> ${item.specialty || ''}</p>
+                    <p><b>Hourly Rate:</b> $${item.hourly_rate || ''}</p>
+                    <p><b>Hire Date:</b> ${item.hire_date || ''}</p>
+                </div>`,
+                inventory: (item) => `<div class="data-card">
+                    <h3>${item.name}</h3>
+                    <p><b>ID:</b> ${item.id}</p>
+                    <p><b>Price:</b> $${item.price}</p>
+                </div>`,
+                tickets: (item) => {
+                    const vehicleInfo = item.vehicle_year || item.vehicle_make || item.vehicle_model
+                        ? `${item.vehicle_year || ''} ${item.vehicle_make || ''} ${item.vehicle_model || ''}`.trim()
+                        : 'Not specified';
+                    const customerName = item.customer 
+                        ? `${item.customer.first_name} ${item.customer.last_name}`
+                        : `Customer ID: ${item.customer_id}`;
+                    const mechanicsList = item.mechanics && item.mechanics.length > 0
+                        ? item.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
+                        : 'Not assigned';
+                    const dateCreated = item.created_at 
+                        ? new Date(item.created_at).toLocaleDateString()
+                        : 'Unknown';
+                    return `<div class="data-card">
+                        <h3>Ticket #${item.id}</h3>
+                        <p><b>Vehicle:</b> ${vehicleInfo}</p>
+                        ${item.vehicle_vin ? `<p><b>VIN:</b> ${item.vehicle_vin}</p>` : ''}
+                        <p><b>Description:</b> ${item.description}</p>
+                        <p><b>Created:</b> ${dateCreated}</p>
+                        <p><b>Status:</b> ${item.status || 'Open'}</p>
+                        <p><b>Customer:</b> ${customerName}</p>
+                        <p><b>Mechanic(s):</b> ${mechanicsList}</p>
+                        ${item.estimated_cost ? `<p><b>Estimated Cost:</b> $${item.estimated_cost.toFixed(2)}</p>` : ''}
+                        ${item.actual_cost ? `<p><b>Actual Cost:</b> $${item.actual_cost.toFixed(2)}</p>` : ''}
+                    </div>`;
+                }
+            };
+            return data.map(renderers[type]).join('');
+        }
+
+        // ===== REFRESH DATA =====
+        async function refreshData(type) {
+            preloadedData[type] = null;
+            await getAllData(type, false);
+        }
+
+        // ===== PRELOAD ALL DATA ON PAGE LOAD =====
+        async function preloadAllData() {
+            try {
+                const [customers, mechanics, inventory, tickets] = await Promise.all([
+                    fetch(`${getApiUrl()}/customers/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading customers')),
+                    fetch(`${getApiUrl()}/mechanics/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading mechanics')),
+                    fetch(`${getApiUrl()}/inventory/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading inventory')),
+                    fetch(`${getApiUrl()}/service-tickets/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading service tickets'))
+                ]);
+                preloadedData.customers = customers;
+                preloadedData.mechanics = mechanics;
+                preloadedData.inventory = inventory;
+                preloadedData.tickets = tickets;
+                console.log('All data preloaded successfully');
+            } catch (error) {
+                console.error('Error preloading data:', error);
+                // Continue without preloaded data
+            }
+        }
+
+        // Call preload on page load
+        window.addEventListener('load', preloadAllData);
         // API base URL (hardcoded)
         const API_URL = 'https://mechanic-api-copy-with-testing-and.onrender.com';
         let authToken = null;
@@ -866,13 +1148,13 @@
                         : 'Not specified';
                     
                     html += `
-                        <div class="customer-card">
+                        <div class="data-card">
                             <h3>Ticket #${ticket.id}</h3>
-                            <p>🚗 Vehicle: ${vehicleInfo}</p>
-                            <p>📝 Description: ${ticket.description}</p>
-                            <p>📊 Status: ${ticket.status || 'Open'}</p>
-                            ${ticket.estimated_cost ? `<p>💵 Estimated: $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                            ${ticket.actual_cost ? `<p>💰 Actual: $${ticket.actual_cost.toFixed(2)}</p>` : ''}
+                            <p><b>Vehicle:</b> ${vehicleInfo}</p>
+                            <p><b>Description:</b> ${ticket.description}</p>
+                            <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                            ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
+                            ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
                         </div>
                     `;
                 });
@@ -884,43 +1166,12 @@
         }
 
         // ===== CUSTOMER FUNCTIONS =====
-        async function getAllCustomers() {
-            const resultDiv = document.getElementById('customers-list');
-            resultDiv.innerHTML = '<div class="loading">Loading customers...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/customers/?_=${Date.now()}`);
-                
-                const data = await parseResponse(response, 'retrieving my tickets');
-                
-                if (data.length === 0) {
-                    resultDiv.innerHTML = '<p>No customers found.</p>';
-                    return;
-                }
-                
-                let html = '';
-                data.forEach(customer => {
-                    html += `
-                        <div class="customer-card">
-                            <h3>${customer.first_name} ${customer.last_name}</h3>
-                            <p>📧 Email: ${customer.email}</p>
-                            <p>📱 Phone: ${customer.phone || 'N/A'}</p>
-                            <p>🏠 Address: ${customer.address || 'N/A'}</p>
-                            <p>🆔 Customer ID: ${customer.id}</p>
-                        </div>
-                    `;
-                });
-                
-                resultDiv.innerHTML = html;
-            } catch (error) {
-                console.error('Fetch error:', error);
-                resultDiv.innerHTML = `<div class="error">
-                    <strong>Error:</strong> ${error.message}<br>
-                    <strong>API URL:</strong> ${getApiUrl()}/customers<br>
-                    <strong>Tip:</strong> Check if your Render backend is running and the URL is correct.<br>
-                    Open browser console (F12) for more details.
-                </div>`;
-            }
+        // ===== REFACTORED: GET ALL CUSTOMERS (PRELOAD + REFRESH) =====
+        async function getAllCustomers(usePreload = true) {
+            await getAllData('customers', usePreload);
+        }
+        async function refreshCustomers() {
+            await refreshData('customers');
         }
 
         async function addCustomer() {
@@ -968,46 +1219,19 @@
                 document.getElementById('customerAddress').value = '';
                 
                 // Refresh customer list
-                setTimeout(() => getAllCustomers(), 1000);
+                setTimeout(() => refreshCustomers(), 1000);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
         }
 
         // ===== MECHANIC FUNCTIONS =====
-        async function getAllMechanics() {
-            const resultDiv = document.getElementById('mechanics-list');
-            resultDiv.innerHTML = '<div class="loading">Loading mechanics...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/mechanics/?_=${Date.now()}`);
-                
-                const data = await parseResponse(response, 'adding mechanic');
-                
-                if (data.length === 0) {
-                    resultDiv.innerHTML = '<p>No mechanics found.</p>';
-                    return;
-                }
-                
-                let html = '';
-                data.forEach(mechanic => {
-                    html += `
-                        <div class="customer-card">
-                            <h3>${mechanic.first_name} ${mechanic.last_name}</h3>
-                            <p>📧 Email: ${mechanic.email}</p>
-                            <p>📱 Phone: ${mechanic.phone || 'N/A'}</p>
-                            <p>🔧 Specialty: ${mechanic.specialty || 'N/A'}</p>
-                            <p>💰 Hourly Rate: $${mechanic.hourly_rate || 'N/A'}</p>
-                            <p>📅 Hire Date: ${mechanic.hire_date || 'N/A'}</p>
-                            <p>🆔 Mechanic ID: ${mechanic.id}</p>
-                        </div>
-                    `;
-                });
-                
-                resultDiv.innerHTML = html;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
+        // ===== REFACTORED: GET ALL MECHANICS (PRELOAD + REFRESH) =====
+        async function getAllMechanics(usePreload = true) {
+            await getAllData('mechanics', usePreload);
+        }
+        async function refreshMechanics() {
+            await refreshData('mechanics');
         }
 
         async function addMechanic() {
@@ -1058,101 +1282,28 @@
                 document.getElementById('mechanicHireDate').value = '';
                 
                 // Refresh mechanic list
-                setTimeout(() => getAllMechanics(), 1000);
+                setTimeout(() => refreshMechanics(), 1000);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
         }
 
         // ===== INVENTORY FUNCTIONS =====
-        async function getAllInventory() {
-            const resultDiv = document.getElementById('inventory-list');
-            resultDiv.innerHTML = '<div class="loading">Loading inventory...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/inventory/?_=${Date.now()}`);
-                
-                const data = await parseResponse(response, 'updating mechanic');
-                
-                if (data.length === 0) {
-                    resultDiv.innerHTML = '<p>No inventory items found.</p>';
-                    return;
-                }
-                
-                let html = '';
-                data.forEach(item => {
-                    html += `
-                        <div class="customer-card">
-                            <h3>${item.name || item.part_name}</h3>
-                            <p>📦 Quantity: ${item.quantity}</p>
-                            <p>💲 Price: $${item.price}</p>
-                            ${item.sku ? `<p>🔖 SKU: ${item.sku}</p>` : ''}
-                            ${item.supplier ? `<p>🏷️ Supplier: ${item.supplier}</p>` : ''}
-                            ${item.description ? `<p>📝 ${item.description}</p>` : ''}
-                            <p>🆔 Part ID: ${item.id}</p>
-                        </div>
-                    `;
-                });
-                
-                resultDiv.innerHTML = html;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
+        // ===== REFACTORED: GET ALL INVENTORY (PRELOAD + REFRESH) =====
+        async function getAllInventory(usePreload = true) {
+            await getAllData('inventory', usePreload);
+        }
+        async function refreshInventory() {
+            await refreshData('inventory');
         }
 
         // ===== SERVICE TICKET FUNCTIONS =====
-        async function getAllTickets() {
-            const resultDiv = document.getElementById('tickets-list');
-            resultDiv.innerHTML = '<div class="loading">Loading service tickets...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/service-tickets/?_=${Date.now()}`);
-                
-                const data = await parseResponse(response, 'deleting mechanic');
-                
-                if (data.length === 0) {
-                    resultDiv.innerHTML = '<p>No service tickets found.</p>';
-                    return;
-                }
-                
-                let html = '';
-                data.forEach(ticket => {
-                    const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
-                        ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
-                        : 'Not specified';
-                    
-                    const customerName = ticket.customer 
-                        ? `${ticket.customer.first_name} ${ticket.customer.last_name}`
-                        : `Customer ID: ${ticket.customer_id}`;
-                    
-                    const mechanicsList = ticket.mechanics && ticket.mechanics.length > 0
-                        ? ticket.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
-                        : 'Not assigned';
-                    
-                    const dateCreated = ticket.created_at 
-                        ? new Date(ticket.created_at).toLocaleDateString()
-                        : 'Unknown';
-                    
-                    html += `
-                        <div class="customer-card">
-                            <h3>Ticket #${ticket.id}</h3>
-                            <p>🚗 Vehicle: ${vehicleInfo}</p>
-                            ${ticket.vehicle_vin ? `<p>🔢 VIN: ${ticket.vehicle_vin}</p>` : ''}
-                            <p>📝 Description: ${ticket.description}</p>
-                            <p>📅 Created: ${dateCreated}</p>
-                            <p>📊 Status: ${ticket.status || 'Open'}</p>
-                            <p>👤 Customer: ${customerName}</p>
-                            <p>🔧 Mechanic(s): ${mechanicsList}</p>
-                            ${ticket.estimated_cost ? `<p>💵 Estimated Cost: $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                            ${ticket.actual_cost ? `<p>💰 Actual Cost: $${ticket.actual_cost.toFixed(2)}</p>` : ''}
-                        </div>
-                    `;
-                });
-                
-                resultDiv.innerHTML = html;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
+        // ===== REFACTORED: GET ALL TICKETS (PRELOAD + REFRESH) =====
+        async function getAllTickets(usePreload = true) {
+            await getAllData('tickets', usePreload);
+        }
+        async function refreshTickets() {
+            await refreshData('tickets');
         }
 
         // Additional Customer Functions
@@ -1177,12 +1328,12 @@
                 const customer = await response.json();
                 
                 resultDiv.innerHTML = `
-                    <div class="customer-card">
+                    <div class="data-card">
                         <h3>${customer.first_name} ${customer.last_name}</h3>
-                        <p>📧 Email: ${customer.email}</p>
-                        <p>📱 Phone: ${customer.phone || 'N/A'}</p>
-                        <p>🏠 Address: ${customer.address || 'N/A'}</p>
-                        <p>🆔 Customer ID: ${customer.id}</p>
+                        <p><b>ID:</b> ${customer.id}</p>
+                        <p><b>Email:</b> ${customer.email}</p>
+                        <p><b>Phone:</b> ${customer.phone || ''}</p>
+                        <p><b>Address:</b> ${customer.address || ''}</p>
                     </div>
                 `;
             } catch (error) {
@@ -1292,7 +1443,7 @@
                 document.getElementById('deleteCustomerId').value = '';
                 
                 // Refresh customer list if visible
-                setTimeout(() => getAllCustomers(), 500);
+                setTimeout(() => refreshCustomers(), 500);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1320,14 +1471,14 @@
                 const mechanic = await response.json();
                 
                 resultDiv.innerHTML = `
-                    <div class="customer-card">
+                    <div class="data-card">
                         <h3>${mechanic.first_name} ${mechanic.last_name}</h3>
-                        <p>📧 Email: ${mechanic.email}</p>
-                        <p>📱 Phone: ${mechanic.phone || 'N/A'}</p>
-                        <p>🔧 Specialty: ${mechanic.specialty || 'N/A'}</p>
-                        <p>💰 Hourly Rate: $${mechanic.hourly_rate || 'N/A'}</p>
-                        <p>📅 Hire Date: ${mechanic.hire_date || 'N/A'}</p>
-                        <p>🆔 Mechanic ID: ${mechanic.id}</p>
+                        <p><b>ID:</b> ${mechanic.id}</p>
+                        <p><b>Email:</b> ${mechanic.email}</p>
+                        <p><b>Phone:</b> ${mechanic.phone || ''}</p>
+                        <p><b>Specialty:</b> ${mechanic.specialty || ''}</p>
+                        <p><b>Hourly Rate:</b> $${mechanic.hourly_rate || ''}</p>
+                        <p><b>Hire Date:</b> ${mechanic.hire_date || ''}</p>
                     </div>
                 `;
             } catch (error) {
@@ -1427,7 +1578,7 @@
                 document.getElementById('deleteMechanicId').value = '';
                 
                 // Refresh mechanic list if visible
-                setTimeout(() => getAllMechanics(), 500);
+                setTimeout(() => refreshMechanics(), 500);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1466,7 +1617,7 @@
                 document.getElementById('inventoryPrice').value = '';
 
                 // Refresh inventory list
-                setTimeout(() => getAllInventory(), 500);
+                setTimeout(() => refreshInventory(), 500);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1493,14 +1644,14 @@
                 const item = await response.json();
                 
                 resultDiv.innerHTML = `
-                    <div class="customer-card">
+                    <div class="data-card">
                         <h3>${item.name || item.part_name}</h3>
-                        <p>📦 Quantity: ${item.quantity}</p>
-                        <p>💲 Price: $${item.price}</p>
-                        ${item.sku ? `<p>🔖 SKU: ${item.sku}</p>` : ''}
-                        ${item.supplier ? `<p>🏷️ Supplier: ${item.supplier}</p>` : ''}
-                        ${item.description ? `<p>📝 ${item.description}</p>` : ''}
-                        <p>🆔 Part ID: ${item.id}</p>
+                        <p><b>ID:</b> ${item.id}</p>
+                        <p><b>Price:</b> $${item.price}</p>
+                        <p><b>Quantity:</b> ${item.quantity}</p>
+                        ${item.sku ? `<p><b>SKU:</b> ${item.sku}</p>` : ''}
+                        ${item.supplier ? `<p><b>Supplier:</b> ${item.supplier}</p>` : ''}
+                        ${item.description ? `<p><b>Description:</b> ${item.description}</p>` : ''}
                     </div>
                 `;
             } catch (error) {
@@ -1585,7 +1736,7 @@
                 document.getElementById('deleteInventoryId').value = '';
                 
                 // Refresh inventory list
-                setTimeout(() => getAllInventory(), 500);
+                setTimeout(() => refreshInventory(), 500);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1649,7 +1800,7 @@
                 document.getElementById('ticketStatus').value = 'Open';
                 
                 // Refresh ticket list
-                setTimeout(() => getAllTickets(), 500);
+                setTimeout(() => refreshTickets(), 500);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1688,16 +1839,16 @@
                     : 'Not assigned';
                 
                 resultDiv.innerHTML = `
-                    <div class="customer-card">
+                    <div class="data-card">
                         <h3>Ticket #${ticket.id}</h3>
-                        <p>🚗 Vehicle: ${vehicleInfo}</p>
-                        ${ticket.vehicle_vin ? `<p>🔢 VIN: ${ticket.vehicle_vin}</p>` : ''}
-                        <p>📝 Description: ${ticket.description}</p>
-                        <p>📊 Status: ${ticket.status || 'Open'}</p>
-                        <p>👤 Customer: ${customerName}</p>
-                        <p>🔧 Mechanic(s): ${mechanicsList}</p>
-                        ${ticket.estimated_cost ? `<p>💵 Estimated: $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                        ${ticket.actual_cost ? `<p>💰 Actual: $${ticket.actual_cost.toFixed(2)}</p>` : ''}
+                        <p><b>Vehicle:</b> ${vehicleInfo}</p>
+                        ${ticket.vehicle_vin ? `<p><b>VIN:</b> ${ticket.vehicle_vin}</p>` : ''}
+                        <p><b>Description:</b> ${ticket.description}</p>
+                        <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                        <p><b>Customer:</b> ${customerName}</p>
+                        <p><b>Mechanic(s):</b> ${mechanicsList}</p>
+                        ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
+                        ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
                     </div>
                 `;
             } catch (error) {
@@ -1795,7 +1946,7 @@
                 document.getElementById('deleteTicketId').value = '';
                 
                 // Refresh ticket list
-                setTimeout(() => getAllTickets(), 500);
+                setTimeout(() => refreshTickets(), 500);
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
@@ -1891,12 +2042,12 @@
                         : 'Not specified';
                     
                     html += `
-                        <div class="customer-card">
+                        <div class="data-card">
                             <h3>Ticket #${ticket.id}</h3>
-                            <p>🚗 Vehicle: ${vehicleInfo}</p>
-                            <p>📝 Description: ${ticket.description}</p>
-                            <p>📊 Status: ${ticket.status || 'Open'}</p>
-                            ${ticket.estimated_cost ? `<p>💵 Estimated: $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
+                            <p><b>Vehicle:</b> ${vehicleInfo}</p>
+                            <p><b>Description:</b> ${ticket.description}</p>
+                            <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                            ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
                         </div>
                     `;
                 });
@@ -1943,13 +2094,13 @@
                         : `Customer ID: ${ticket.customer_id}`;
                     
                     html += `
-                        <div class="customer-card">
+                        <div class="data-card">
                             <h3>Ticket #${ticket.id}</h3>
-                            <p>👤 Customer: ${customerName}</p>
-                            <p>🚗 Vehicle: ${vehicleInfo}</p>
-                            <p>📝 Description: ${ticket.description}</p>
-                            <p>📊 Status: ${ticket.status || 'Open'}</p>
-                            ${ticket.estimated_cost ? `<p>💵 Estimated: $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
+                            <p><b>Customer:</b> ${customerName}</p>
+                            <p><b>Vehicle:</b> ${vehicleInfo}</p>
+                            <p><b>Description:</b> ${ticket.description}</p>
+                            <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                            ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
                         </div>
                     `;
                 });
