@@ -1405,7 +1405,6 @@
             try {
                 const body = {
                     name: partName,
-                    quantity: parseInt(quantity),
                     price: parseFloat(price)
                 };
                 if (sku) body.sku = sku;
@@ -1494,7 +1493,6 @@
             if (sku) updateData.sku = sku;
             if (supplier) updateData.supplier = supplier;
             if (description) updateData.description = description;
-            if (quantity) updateData.quantity = parseInt(quantity);
             if (price) updateData.price = parseFloat(price);
             
             if (Object.keys(updateData).length === 0) {
