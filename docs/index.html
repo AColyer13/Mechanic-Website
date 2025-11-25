@@ -500,22 +500,6 @@
                     <input type="text" id="inventoryPartName" placeholder="Oil Filter">
                 </div>
                 <div class="form-group">
-                    <label for="inventorySku">SKU (optional):</label>
-                    <input type="text" id="inventorySku" placeholder="OF-1234">
-                </div>
-                <div class="form-group">
-                    <label for="inventorySupplier">Supplier (optional):</label>
-                    <input type="text" id="inventorySupplier" placeholder="ACME Parts">
-                </div>
-                <div class="form-group">
-                    <label for="inventoryDescription">Description (optional):</label>
-                    <input type="text" id="inventoryDescription" placeholder="High-quality oil filter">
-                </div>
-                <div class="form-group">
-                    <label for="inventoryQuantity">Quantity:</label>
-                    <input type="number" id="inventoryQuantity" placeholder="10">
-                </div>
-                <div class="form-group">
                     <label for="inventoryPrice">Price:</label>
                     <input type="number" step="0.01" id="inventoryPrice" placeholder="15.99">
                 </div>
@@ -542,22 +526,6 @@
                 <div class="form-group">
                     <label for="updateInventoryPartName">Part Name (optional):</label>
                     <input type="text" id="updateInventoryPartName" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateInventorySku">SKU (optional):</label>
-                    <input type="text" id="updateInventorySku" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateInventorySupplier">Supplier (optional):</label>
-                    <input type="text" id="updateInventorySupplier" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateInventoryDescription">Description (optional):</label>
-                    <input type="text" id="updateInventoryDescription" placeholder="Leave blank to keep current">
-                </div>
-                <div class="form-group">
-                    <label for="updateInventoryQuantity">Quantity (optional):</label>
-                    <input type="number" id="updateInventoryQuantity" placeholder="Leave blank to keep current">
                 </div>
                 <div class="form-group">
                     <label for="updateInventoryPrice">Price (optional):</label>
@@ -1469,13 +1437,9 @@
         async function addInventoryItem() {
             const resultDiv = document.getElementById('add-inventory-result');
             const partName = document.getElementById('inventoryPartName').value;
-            const sku = document.getElementById('inventorySku').value;
-            const supplier = document.getElementById('inventorySupplier').value;
-            const description = document.getElementById('inventoryDescription').value;
-            const quantity = document.getElementById('inventoryQuantity').value;
             const price = document.getElementById('inventoryPrice').value;
             
-            if (!partName || !quantity || !price) {
+            if (!partName || !price) {
                 resultDiv.innerHTML = '<div class="error">Please fill in all fields!</div>';
                 return;
             }
@@ -1485,9 +1449,6 @@
                     name: partName,
                     price: parseFloat(price)
                 };
-                if (sku) body.sku = sku;
-                if (supplier) body.supplier = supplier;
-                if (description) body.description = description;
 
                 const response = await fetch(`${getApiUrl()}/inventory/`, {
                     method: 'POST',
@@ -1502,11 +1463,7 @@
 
                 // Clear form
                 document.getElementById('inventoryPartName').value = '';
-                document.getElementById('inventoryQuantity').value = '';
                 document.getElementById('inventoryPrice').value = '';
-                document.getElementById('inventorySku').value = '';
-                document.getElementById('inventorySupplier').value = '';
-                document.getElementById('inventoryDescription').value = '';
 
                 // Refresh inventory list
                 setTimeout(() => getAllInventory(), 500);
@@ -1555,10 +1512,6 @@
             const resultDiv = document.getElementById('update-inventory-result');
             const inventoryId = document.getElementById('updateInventoryId').value;
             const partName = document.getElementById('updateInventoryPartName').value;
-            const sku = document.getElementById('updateInventorySku').value;
-            const supplier = document.getElementById('updateInventorySupplier').value;
-            const description = document.getElementById('updateInventoryDescription').value;
-            const quantity = document.getElementById('updateInventoryQuantity').value;
             const price = document.getElementById('updateInventoryPrice').value;
             
             if (!inventoryId) {
@@ -1568,9 +1521,6 @@
             
             const updateData = {};
             if (partName) updateData.name = partName;
-            if (sku) updateData.sku = sku;
-            if (supplier) updateData.supplier = supplier;
-            if (description) updateData.description = description;
             if (price) updateData.price = parseFloat(price);
             
             if (Object.keys(updateData).length === 0) {
@@ -1596,10 +1546,6 @@
                 // Clear form
                 document.getElementById('updateInventoryId').value = '';
                 document.getElementById('updateInventoryPartName').value = '';
-                document.getElementById('updateInventorySku').value = '';
-                document.getElementById('updateInventorySupplier').value = '';
-                document.getElementById('updateInventoryDescription').value = '';
-                document.getElementById('updateInventoryQuantity').value = '';
                 document.getElementById('updateInventoryPrice').value = '';
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
