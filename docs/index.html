@@ -122,7 +122,6 @@
             max-height: 400px;
             overflow-y: auto;
             border: 1px solid #e9ecef;
-            display: none; /* Hidden by default, shown by toggle functions */
         }
 
         .data-card {
@@ -427,7 +426,7 @@
             <div class="section auth-required" id="my-tickets-section">
                 <h2>🎫 My Service Tickets</h2>
                 <button onclick="getMyTickets()">Get My Tickets</button>
-                <div id="my-tickets-list" class="results"></div>
+                <div id="my-tickets-list" class="results" style="display: none;"></div>
             </div>
             
             <div class="section auth-required" id="update-customer-section">
@@ -480,7 +479,7 @@
             <div class="section">
                 <h2>View All Customers</h2>
                 <button id="toggle-customers-btn" onclick="toggleCustomersList()">Get All Customers</button>
-                <div id="customers-list" class="results"></div>
+                <div id="customers-list" class="results" style="display: none;"></div>
             </div>
             
             <div class="section">
@@ -531,7 +530,7 @@
             <div class="section">
                 <h2>View All Mechanics</h2>
                 <button id="toggle-mechanics-btn" onclick="toggleMechanicsList()">Get All Mechanics</button>
-                <div id="mechanics-list" class="results"></div>
+                <div id="mechanics-list" class="results" style="display: none;"></div>
             </div>
             
             <div class="section">
@@ -632,7 +631,7 @@
             <div class="section">
                 <h2>View Inventory</h2>
                 <button id="toggle-inventory-btn" onclick="toggleInventoryList()">Get All Items</button>
-                <div id="inventory-list" class="results"></div>
+                <div id="inventory-list" class="results" style="display: none;"></div>
             </div>
             
             <div class="section">
@@ -693,7 +692,7 @@
             <div class="section">
                 <h2>View Service Tickets</h2>
                 <button id="toggle-tickets-btn" onclick="toggleTicketsList()">Get All Tickets</button>
-                <div id="tickets-list" class="results"></div>
+                <div id="tickets-list" class="results" style="display: none;"></div>
             </div>
             
             <div class="section">
@@ -1217,6 +1216,7 @@
                     `;
                 });
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = html;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
@@ -1385,6 +1385,7 @@
                 
                 const customer = await response.json();
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = `
                     <div class="data-card">
                         <h3>${customer.first_name} ${customer.last_name}</h3>
@@ -1528,6 +1529,7 @@
                 
                 const mechanic = await response.json();
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = `
                     <div class="data-card">
                         <h3>${mechanic.first_name} ${mechanic.last_name}</h3>
@@ -1701,6 +1703,7 @@
                 
                 const item = await response.json();
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = `
                     <div class="data-card">
                         <h3>${item.name || item.part_name}</h3>
@@ -1896,6 +1899,7 @@
                     ? ticket.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
                     : 'Not assigned';
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = `
                     <div class="data-card">
                         <h3>Ticket #${ticket.id}</h3>
@@ -2110,6 +2114,7 @@
                     `;
                 });
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = html;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
@@ -2163,6 +2168,7 @@
                     `;
                 });
                 
+                resultDiv.style.display = '';
                 resultDiv.innerHTML = html;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
