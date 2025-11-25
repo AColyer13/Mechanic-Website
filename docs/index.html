@@ -122,6 +122,7 @@
             max-height: 400px;
             overflow-y: auto;
             border: 1px solid #e9ecef;
+            display: none; /* Hidden by default, shown by toggle functions */
         }
 
         .data-card {
@@ -478,7 +479,7 @@
         <div id="customers-tab" class="tab-content active">
             <div class="section">
                 <h2>View All Customers</h2>
-                <button onclick="getAllCustomers()">Get All Customers</button>
+                <button id="toggle-customers-btn" onclick="toggleCustomersList()">Get All Customers</button>
                 <div id="customers-list" class="results"></div>
             </div>
             
@@ -529,7 +530,7 @@
         <div id="mechanics-tab" class="tab-content">
             <div class="section">
                 <h2>View All Mechanics</h2>
-                <button onclick="getAllMechanics()">Get All Mechanics</button>
+                <button id="toggle-mechanics-btn" onclick="toggleMechanicsList()">Get All Mechanics</button>
                 <div id="mechanics-list" class="results"></div>
             </div>
             
@@ -631,7 +632,7 @@
             <div class="section">
                 <h2>View Inventory</h2>
                 <button id="toggle-inventory-btn" onclick="toggleInventoryList()">Get All Items</button>
-                <div id="inventory-list" class="results" style="display:none;"></div>
+                <div id="inventory-list" class="results"></div>
             </div>
             
             <div class="section">
@@ -691,7 +692,7 @@
         <div id="tickets-tab" class="tab-content">
             <div class="section">
                 <h2>View Service Tickets</h2>
-                <button onclick="getAllTickets()">Get All Tickets</button>
+                <button id="toggle-tickets-btn" onclick="toggleTicketsList()">Get All Tickets</button>
                 <div id="tickets-list" class="results"></div>
             </div>
             
@@ -855,7 +856,7 @@
                 let inventoryVisible = false;
                 async function toggleInventoryList() {
                     const btn = document.getElementById('toggle-inventory-btn');
-                    const list = document.getElementById('inventory-list');
+                    const list = domElements.inventoryList;
                     if (!inventoryVisible) {
                         // Show and fetch
                         btn.textContent = 'Hide';
@@ -867,6 +868,63 @@
                         btn.textContent = 'Get All Items';
                         list.style.display = 'none';
                         inventoryVisible = false;
+                    }
+                }
+
+                // Toggle customers list visibility and fetch if needed
+                let customersVisible = false;
+                async function toggleCustomersList() {
+                    const btn = document.getElementById('toggle-customers-btn');
+                    const list = domElements.customersList;
+                    if (!customersVisible) {
+                        // Show and fetch
+                        btn.textContent = 'Hide';
+                        list.style.display = '';
+                        await getAllCustomers();
+                        customersVisible = true;
+                    } else {
+                        // Hide
+                        btn.textContent = 'Get All Customers';
+                        list.style.display = 'none';
+                        customersVisible = false;
+                    }
+                }
+
+                // Toggle mechanics list visibility and fetch if needed
+                let mechanicsVisible = false;
+                async function toggleMechanicsList() {
+                    const btn = document.getElementById('toggle-mechanics-btn');
+                    const list = domElements.mechanicsList;
+                    if (!mechanicsVisible) {
+                        // Show and fetch
+                        btn.textContent = 'Hide';
+                        list.style.display = '';
+                        await getAllMechanics();
+                        mechanicsVisible = true;
+                    } else {
+                        // Hide
+                        btn.textContent = 'Get All Mechanics';
+                        list.style.display = 'none';
+                        mechanicsVisible = false;
+                    }
+                }
+
+                // Toggle tickets list visibility and fetch if needed
+                let ticketsVisible = false;
+                async function toggleTicketsList() {
+                    const btn = document.getElementById('toggle-tickets-btn');
+                    const list = domElements.ticketsList;
+                    if (!ticketsVisible) {
+                        // Show and fetch
+                        btn.textContent = 'Hide';
+                        list.style.display = '';
+                        await getAllTickets();
+                        ticketsVisible = true;
+                    } else {
+                        // Hide
+                        btn.textContent = 'Get All Tickets';
+                        list.style.display = 'none';
+                        ticketsVisible = false;
                     }
                 }
         // ===== PRELOAD VARIABLES =====
