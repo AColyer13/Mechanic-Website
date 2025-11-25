@@ -694,6 +694,34 @@
                 <button id="toggle-tickets-btn" onclick="toggleTicketsList()">Get All Tickets</button>
                 <div id="tickets-list" class="results" style="display: none;"></div>
             </div>
+
+            <div class="section">
+                <h2>Add Part to Service Ticket</h2>
+                <div class="form-group">
+                    <label for="addPartTicketId">Ticket ID:</label>
+                    <input type="number" id="addPartTicketId" placeholder="Ticket ID">
+                </div>
+                <div class="form-group">
+                    <label for="addPartInventoryId">Part (Inventory) ID:</label>
+                    <input type="number" id="addPartInventoryId" placeholder="Inventory ID">
+                </div>
+                <button onclick="addPartToTicket()">Add Part to Ticket</button>
+                <div id="add-part-to-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h2>Remove Part from Service Ticket</h2>
+                <div class="form-group">
+                    <label for="removePartTicketId">Ticket ID:</label>
+                    <input type="number" id="removePartTicketId" placeholder="Ticket ID">
+                </div>
+                <div class="form-group">
+                    <label for="removePartInventoryId">Part (Inventory) ID:</label>
+                    <input type="number" id="removePartInventoryId" placeholder="Inventory ID">
+                </div>
+                <button onclick="removePartFromTicket()">Remove Part from Ticket</button>
+                <div id="remove-part-from-ticket-result"></div>
+            </div>
             
             <div class="section">
                 <h2>Create Service Ticket</h2>
@@ -851,7 +879,55 @@
     </div>
 
     <script>
+                        // Remove part from service ticket
+                        async function removePartFromTicket() {
+                            const resultDiv = document.getElementById('remove-part-from-ticket-result');
+                            const ticketId = document.getElementById('removePartTicketId').value;
+                            const partId = document.getElementById('removePartInventoryId').value;
+                            if (!ticketId || !partId) {
+                                resultDiv.innerHTML = '<div class="error">Please enter both Ticket ID and Part ID!';
+                                return;
+                            }
+                            resultDiv.innerHTML = '<div class="loading">Removing part from ticket...';
+                            try {
+                                const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/remove-part/${partId}`, {
+                                    method: 'PUT'
+                                });
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                resultDiv.innerHTML = `<div class="success">✅ Part removed from ticket!</div>`;
+                                document.getElementById('removePartTicketId').value = '';
+                                document.getElementById('removePartInventoryId').value = '';
+                            } catch (error) {
+                                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                            }
+                        }
                 // Toggle inventory list visibility and fetch if needed
+                        // Add part to service ticket
+                        async function addPartToTicket() {
+                            const resultDiv = document.getElementById('add-part-to-ticket-result');
+                            const ticketId = document.getElementById('addPartTicketId').value;
+                            const partId = document.getElementById('addPartInventoryId').value;
+                            if (!ticketId || !partId) {
+                                resultDiv.innerHTML = '<div class="error">Please enter both Ticket ID and Part ID!</div>';
+                                return;
+                            }
+                            resultDiv.innerHTML = '<div class="loading">Adding part to ticket...</div>';
+                            try {
+                                const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/add-part/${partId}`, {
+                                    method: 'PUT'
+                                });
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                resultDiv.innerHTML = `<div class="success">✅ Part added to ticket!</div>`;
+                                document.getElementById('addPartTicketId').value = '';
+                                document.getElementById('addPartInventoryId').value = '';
+                            } catch (error) {
+                                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                            }
+                        }
                 let inventoryVisible = false;
                 async function toggleInventoryList() {
                     const btn = document.getElementById('toggle-inventory-btn');
@@ -1004,6 +1080,13 @@
                     const dateCreated = item.created_at 
                         ? new Date(item.created_at).toLocaleDateString()
                         : 'Unknown';
+                    // Parts rendering
+                    let partsHtml = '';
+                    if (item.parts && Array.isArray(item.parts) && item.parts.length > 0) {
+                        partsHtml = `<p><b>Parts:</b> ` + item.parts.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
+                    } else if (item.inventory && Array.isArray(item.inventory) && item.inventory.length > 0) {
+                        partsHtml = `<p><b>Parts:</b> ` + item.inventory.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
+                    }
                     return `<div class="data-card">
                         <h3>Ticket #${item.id}</h3>
                         <p><b>Vehicle:</b> ${vehicleInfo}</p>
@@ -1013,6 +1096,7 @@
                         <p><b>Status:</b> ${item.status || 'Open'}</p>
                         <p><b>Customer:</b> ${customerName}</p>
                         <p><b>Mechanic(s):</b> ${mechanicsList}</p>
+                        ${partsHtml}
                         ${item.estimated_cost ? `<p><b>Estimated Cost:</b> $${item.estimated_cost.toFixed(2)}</p>` : ''}
                         ${item.actual_cost ? `<p><b>Actual Cost:</b> $${item.actual_cost.toFixed(2)}</p>` : ''}
                     </div>`;
@@ -1696,13 +1780,23 @@
             
             try {
                 const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`);
-                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
                 const item = await response.json();
-                
+                let ticketsHtml = '';
+                // Try to find related tickets in the response
+                let tickets = [];
+                if (item.tickets && Array.isArray(item.tickets)) {
+                    tickets = item.tickets;
+                } else if (item.service_tickets && Array.isArray(item.service_tickets)) {
+                    tickets = item.service_tickets;
+                }
+                if (tickets.length > 0) {
+                    ticketsHtml = `<div style='margin-top:1em;'><b>Used in Tickets:</b><ul style='margin:0 0 0 1em;'>` +
+                        tickets.map(t => `<li>Ticket #${t.id}: ${t.description ? t.description : ''}</li>`).join('') +
+                        `</ul></div>`;
+                }
                 resultDiv.style.display = '';
                 resultDiv.innerHTML = `
                     <div class="data-card">
@@ -1713,6 +1807,7 @@
                         ${item.sku ? `<p><b>SKU:</b> ${item.sku}</p>` : ''}
                         ${item.supplier ? `<p><b>Supplier:</b> ${item.supplier}</p>` : ''}
                         ${item.description ? `<p><b>Description:</b> ${item.description}</p>` : ''}
+                        ${ticketsHtml}
                     </div>
                 `;
             } catch (error) {
@@ -1880,25 +1975,26 @@
             
             try {
                 const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`);
-                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
                 const ticket = await response.json();
-                
                 const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
                     ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
                     : 'Not specified';
-                
                 const customerName = ticket.customer 
                     ? `${ticket.customer.first_name} ${ticket.customer.last_name}`
                     : `Customer ID: ${ticket.customer_id}`;
-                
                 const mechanicsList = ticket.mechanics && ticket.mechanics.length > 0
                     ? ticket.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
                     : 'Not assigned';
-                
+                // Parts rendering
+                let partsHtml = '';
+                if (ticket.parts && Array.isArray(ticket.parts) && ticket.parts.length > 0) {
+                    partsHtml = `<p><b>Parts:</b> ` + ticket.parts.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
+                } else if (ticket.inventory && Array.isArray(ticket.inventory) && ticket.inventory.length > 0) {
+                    partsHtml = `<p><b>Parts:</b> ` + ticket.inventory.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
+                }
                 resultDiv.style.display = '';
                 resultDiv.innerHTML = `
                     <div class="data-card">
@@ -1909,6 +2005,7 @@
                         <p><b>Status:</b> ${ticket.status || 'Open'}</p>
                         <p><b>Customer:</b> ${customerName}</p>
                         <p><b>Mechanic(s):</b> ${mechanicsList}</p>
+                        ${partsHtml}
                         ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
                         ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
                     </div>
