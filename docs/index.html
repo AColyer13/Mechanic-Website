@@ -722,6 +722,16 @@
                 <button onclick="removePartFromTicket()">Remove Part from Ticket</button>
                 <div id="remove-part-from-ticket-result"></div>
             </div>
+
+            <div class="section">
+                <h2>Get Tickets by Customer ID</h2>
+                <div class="form-group">
+                    <label for="ticketsByCustomerId">Customer ID:</label>
+                    <input type="number" id="ticketsByCustomerId" placeholder="Customer ID">
+                </div>
+                <button onclick="getTicketsByCustomer()">Get Customer Tickets</button>
+                <div id="tickets-by-customer-result" class="results"></div>
+            </div>
             
             <div class="section">
                 <h2>Create Service Ticket</h2>
