@@ -1405,7 +1405,6 @@
             try {
                 const body = {
                     name: partName,
-                    part_name: partName,
                     quantity: parseInt(quantity),
                     price: parseFloat(price)
                 };
@@ -1420,14 +1419,10 @@
                     },
                     body: JSON.stringify(body)
                 });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+
+                const data = await parseResponse(response, 'adding inventory item');
                 resultDiv.innerHTML = `<div class="success">✅ Inventory item added! ID: ${data.id}</div>`;
-                
+
                 // Clear form
                 document.getElementById('inventoryPartName').value = '';
                 document.getElementById('inventoryQuantity').value = '';
@@ -1435,7 +1430,7 @@
                 document.getElementById('inventorySku').value = '';
                 document.getElementById('inventorySupplier').value = '';
                 document.getElementById('inventoryDescription').value = '';
-                
+
                 // Refresh inventory list
                 setTimeout(() => getAllInventory(), 500);
             } catch (error) {
@@ -1495,7 +1490,7 @@
             }
             
             const updateData = {};
-            if (partName) { updateData.name = partName; updateData.part_name = partName; }
+            if (partName) updateData.name = partName;
             if (sku) updateData.sku = sku;
             if (supplier) updateData.supplier = supplier;
             if (description) updateData.description = description;
