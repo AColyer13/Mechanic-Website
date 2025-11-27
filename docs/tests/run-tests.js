@@ -30,20 +30,20 @@ async function fetchJson(url, opts = {}) {
 async function expectUnauthorized(call, label) {
   const res = await call();
   if (res.ok) {
-    console.log(`✖ ${label}: expected unauthorized but got ${res.status}`);
+    console.log(`FAIL ${label}: expected unauthorized but got ${res.status}`);
     return false;
   }
-  console.log(`✔ ${label}: got ${res.status} (unauthenticated)`);
+  console.log(`OK ${label}: got ${res.status} (unauthenticated)`);
   return true;
 }
 
 async function expectSuccess(call, label) {
   const res = await call();
   if (!res.ok) {
-    console.log(`✖ ${label}: expected success but got ${res.status} - ${JSON.stringify(res.body)}`);
+    console.log(`FAIL ${label}: expected success but got ${res.status} - ${JSON.stringify(res.body)}`);
     return false;
   }
-  console.log(`✔ ${label}: ${res.status}`);
+  console.log(`OK ${label}: ${res.status}`);
   return res;
 }
 
@@ -64,31 +64,41 @@ async function run() {
     if (ok) okCount++; else failCount++;
   }
 
-  if (!TEST_EMAIL || !TEST_PASSWORD) {
-    console.log('\nSkipping authenticated checks because TEST_EMAIL/TEST_PASSWORD missing.');
-    console.log('Set environment variables TEST_EMAIL and TEST_PASSWORD to run full test.');
+  // Prepare credentials: if TEST_EMAIL not provided, generate ephemeral email+password
+  let email = TEST_EMAIL;
+  let password = TEST_PASSWORD;
+  if (!email) {
+    email = `smoke+${Date.now()}@example.test`;
+    if (!password) password = `pw${Date.now()}`;
+    console.log('\nNo TEST_EMAIL provided — using ephemeral email:', email);
+  } else if (!password) {
+    console.log('\nTEST_EMAIL provided but TEST_PASSWORD missing; cannot proceed with authenticated checks.');
     process.exit(failCount>0?1:0);
   }
 
   // Login
-  console.log('\nAttempting login with TEST_EMAIL...');
-  let loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }) });
+  console.log('\nAttempting login with', email);
+  let createdUser = false;
+  let createdCustomerId = null;
+  let loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
   if (!loginRes.ok || !loginRes.body || !loginRes.body.token) {
     console.log('Login failed, attempting to create test user...');
-    const createUserRes = await fetchJson(`${API_URL}/customers/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ first_name: 'Test', last_name: 'Runner', email: TEST_EMAIL, password: TEST_PASSWORD }) });
+    const createUserRes = await fetchJson(`${API_URL}/customers/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ first_name: 'Test', last_name: 'Runner', email, password }) });
     if (!createUserRes.ok) {
       console.error('Failed to create test user:', createUserRes.status, createUserRes.body);
       process.exit(2);
     }
+    createdCustomerId = createUserRes.body && createUserRes.body.id ? createUserRes.body.id : null;
     console.log('Test user created, retrying login...');
-    loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }) });
+    createdUser = true;
+    loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
     if (!loginRes.ok || !loginRes.body || !loginRes.body.token) {
       console.error('Login still failed after creating user:', loginRes.status, loginRes.body);
       process.exit(2);
     }
   }
   const token = loginRes.body.token;
-  console.log('✔ Logged in. Token length:', token.length);
+  console.log('OK Logged in. Token length:', token.length);
 
   // Authenticated checks
   // Create inventory item (POST), update (PUT), delete (DELETE)
@@ -126,6 +136,17 @@ async function run() {
     }
     await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/${ticketId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: 'In Progress' }) }), 'PUT /service-tickets/:id (auth)');
     await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/${ticketId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }), 'DELETE /service-tickets/:id (auth)');
+  }
+
+  // Cleanup test user if we created it
+  if (createdUser) {
+    console.log('\nCleaning up test user...');
+    const cid = createdCustomerId || (loginRes.body && loginRes.body.customer ? loginRes.body.customer.id : null);
+    if (cid) {
+      await fetchJson(`${API_URL}/customers/${cid}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    } else {
+      console.warn('Could not determine customer id to delete');
+    }
   }
 
   console.log('\nSmoke tests finished. If all ✔ passed, protected endpoints require authorization and mutations work with a token.');
