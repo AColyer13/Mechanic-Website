@@ -5,261 +5,473 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mechanic Shop - Customer Portal</title>
     <link rel="stylesheet" href="style.css">
-        <!-- The rest of your HTML content goes here, outside the <style> block. -->
-        <!-- ...existing code... -->
-        <script src="index.js"></script>
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+</head>
+<body>
+    <div class="container">
+        <h1>Mechanic Shop — Customer Portal</h1>
 
-        async function getInventoryById() {
-            const resultDiv = document.getElementById('get-inventory-result');
-            const inventoryId = document.getElementById('getInventoryId').value;
-            
-            if (!inventoryId) {
-                resultDiv.innerHTML = '<div class="error">Please enter an inventory ID!</div>';
-                return;
-            }
-            
-            resultDiv.innerHTML = '<div class="loading">Loading inventory item...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const item = await response.json();
-                let ticketsHtml = '';
-                // Try to find related tickets in the response
-                let tickets = [];
-                if (item.tickets && Array.isArray(item.tickets)) {
-                    tickets = item.tickets;
-                } else if (item.service_tickets && Array.isArray(item.service_tickets)) {
-                    tickets = item.service_tickets;
-                }
-                if (tickets.length > 0) {
-                    ticketsHtml = `<div style='margin-top:1em;'><b>Used in Tickets:</b><ul style='margin:0 0 0 1em;'>` +
-                        tickets.map(t => `<li>Ticket #${t.id}: ${t.description ? t.description : ''}</li>`).join('') +
-                        `</ul></div>`;
-                }
-                resultDiv.style.display = '';
-                resultDiv.innerHTML = `
-                    <div class="data-card">
-                        <h3>${item.name || item.part_name}</h3>
-                        <p><b>ID:</b> ${item.id}</p>
-                        <p><b>Price:</b> $${item.price}</p>
-                        <p><b>Quantity:</b> ${item.quantity}</p>
-                        ${item.sku ? `<p><b>SKU:</b> ${item.sku}</p>` : ''}
-                        ${item.supplier ? `<p><b>Supplier:</b> ${item.supplier}</p>` : ''}
-                        ${item.description ? `<p><b>Description:</b> ${item.description}</p>` : ''}
-                        ${ticketsHtml}
-                    </div>
-                `;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+        <div id="auth-message" style="padding:.5rem;margin-bottom:1rem;background:#f0f0f0;border-radius:6px;">🔓 Not logged in</div>
 
-        async function updateInventoryItem() {
-            const resultDiv = document.getElementById('update-inventory-result');
-            const inventoryId = document.getElementById('updateInventoryId').value;
-            const partName = document.getElementById('updateInventoryPartName').value;
-            const price = document.getElementById('updateInventoryPrice').value;
-            
-            if (!inventoryId) {
-                resultDiv.innerHTML = '<div class="error">Please enter an inventory ID!</div>';
-                return;
-            }
-            
-            const updateData = {};
-            if (partName) updateData.name = partName;
-            if (price) updateData.price = parseFloat(price);
-            
-            if (Object.keys(updateData).length === 0) {
-                resultDiv.innerHTML = '<div class="error">Please enter at least one field to update!</div>';
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(updateData)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                resultDiv.innerHTML = `<div class="success">✅ Inventory item updated!</div>`;
-                
-                // Clear form
-                document.getElementById('updateInventoryId').value = '';
-                document.getElementById('updateInventoryPartName').value = '';
-                document.getElementById('updateInventoryPrice').value = '';
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+        <div class="section auth-required">
+            <h2>Account / Login</h2>
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input id="loginEmail" type="email" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" placeholder="password">
+            </div>
+            <button onclick="login()">Login</button>
+            <button onclick="logout()">Logout</button>
+            <div id="login-result"></div>
+            <div id="my-tickets-list" class="results" style="display:none;margin-top:0.5rem"></div>
+        </div>
 
-        async function deleteInventoryItem() {
-            const resultDiv = document.getElementById('delete-inventory-result');
-            const inventoryId = document.getElementById('deleteInventoryId').value;
-            
-            if (!inventoryId) {
-                resultDiv.innerHTML = '<div class="error">Please enter an inventory ID!</div>';
-                return;
-            }
-            
-            if (!confirm(`Are you sure you want to delete inventory item ${inventoryId}?`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`, {
-                    method: 'DELETE'
-                });
-                
-                const data = await response.json();
-                
-                if (response.status === 409) {
-                    resultDiv.innerHTML = `<div class="error">❌ Cannot delete inventory item!<br>${data.error || 'Item is associated with service tickets.'}<br><br>💡 Tip: Remove this part from service tickets first.</div>`;
-                    return;
-                }
-                
-                if (!response.ok) {
-                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
-                }
-                
-                resultDiv.innerHTML = `<div class="success">✅ Inventory item deleted!</div>`;
-                document.getElementById('deleteInventoryId').value = '';
-                
-                // Refresh inventory list
-                setTimeout(() => refreshInventory(), 500);
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+        <hr>
 
-        // Additional Service Ticket Functions
-        async function createServiceTicket() {
-            const resultDiv = document.getElementById('create-ticket-result');
-            const customerId = document.getElementById('ticketCustomerId').value;
-            const description = document.getElementById('ticketDescription').value;
-            const vehicleYear = document.getElementById('ticketVehicleYear').value;
-            const vehicleMake = document.getElementById('ticketVehicleMake').value;
-            const vehicleModel = document.getElementById('ticketVehicleModel').value;
-            const vehicleVin = document.getElementById('ticketVehicleVin').value;
-            const mechanicId = document.getElementById('ticketMechanicId') ? document.getElementById('ticketMechanicId').value : '';
-            const estimatedCost = document.getElementById('ticketEstimatedCost').value;
-            const status = document.getElementById('ticketStatus').value;
-            
-            if (!customerId || !description) {
-                resultDiv.innerHTML = '<div class="error">Please enter customer ID and description!</div>';
-                return;
-            }
-            
-            const ticketData = {
-                customer_id: parseInt(customerId),
-                description: description,
-                status: status
-            };
-            
-            if (vehicleYear) ticketData.vehicle_year = parseInt(vehicleYear);
-            if (vehicleMake) ticketData.vehicle_make = vehicleMake;
-            if (vehicleModel) ticketData.vehicle_model = vehicleModel;
-            if (vehicleVin) ticketData.vehicle_vin = vehicleVin;
-            if (mechanicId) ticketData.mechanic_id = parseInt(mechanicId);
-            if (estimatedCost) ticketData.estimated_cost = parseFloat(estimatedCost);
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/service-tickets/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(ticketData)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                resultDiv.innerHTML = `<div class="success">✅ Service ticket created! ID: ${data.id}</div>`;
-                
-                // Clear form
-                document.getElementById('ticketCustomerId').value = '';
-                document.getElementById('ticketDescription').value = '';
-                document.getElementById('ticketVehicleYear').value = '';
-                document.getElementById('ticketVehicleMake').value = '';
-                document.getElementById('ticketVehicleModel').value = '';
-                document.getElementById('ticketVehicleVin').value = '';
-                document.getElementById('ticketEstimatedCost').value = '';
-                document.getElementById('ticketStatus').value = 'Open';
-                
-                // Refresh ticket list
-                setTimeout(() => refreshTickets(), 500);
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+        <nav style="display:flex;gap:.5rem;margin:1rem 0;">
+            <button class="tab" onclick="switchTab('customers')">Customers</button>
+            <button class="tab" onclick="switchTab('mechanics')">Mechanics</button>
+            <button class="tab" onclick="switchTab('inventory')">Inventory</button>
+            <button class="tab" onclick="switchTab('tickets')">Service Tickets</button>
+        </nav>
 
-        async function getTicketById() {
-            const resultDiv = document.getElementById('get-ticket-result');
-            const ticketId = document.getElementById('getTicketId').value;
-            
-            if (!ticketId) {
-                resultDiv.innerHTML = '<div class="error">Please enter a ticket ID!</div>';
-                return;
-            }
-            
-            resultDiv.innerHTML = '<div class="loading">Loading ticket...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const ticket = await response.json();
-                const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
-                    ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
-                    : 'Not specified';
-                const customerName = ticket.customer 
-                    ? `${ticket.customer.first_name} ${ticket.customer.last_name}`
-                    : `Customer ID: ${ticket.customer_id}`;
-                const mechanicsList = ticket.mechanics && ticket.mechanics.length > 0
-                    ? ticket.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
-                    : 'Not assigned';
-                // Parts rendering
-                let partsHtml = '';
-                if (ticket.parts && Array.isArray(ticket.parts) && ticket.parts.length > 0) {
-                    partsHtml = `<p><b>Parts:</b> ` + ticket.parts.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
-                } else if (ticket.inventory && Array.isArray(ticket.inventory) && ticket.inventory.length > 0) {
-                    partsHtml = `<p><b>Parts:</b> ` + ticket.inventory.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
-                }
-                resultDiv.style.display = '';
-                resultDiv.innerHTML = `
-                    <div class="data-card">
-                        <h3>Ticket #${ticket.id}</h3>
-                        <p><b>Vehicle:</b> ${vehicleInfo}</p>
-                        ${ticket.vehicle_vin ? `<p><b>VIN:</b> ${ticket.vehicle_vin}</p>` : ''}
-                        <p><b>Description:</b> ${ticket.description}</p>
-                        <p><b>Status:</b> ${ticket.status || 'Open'}</p>
-                        <p><b>Customer:</b> ${customerName}</p>
-                        <p><b>Mechanic(s):</b> ${mechanicsList}</p>
-                        ${partsHtml}
-                        ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                        ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
-                    </div>
-                `;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+        <!-- Customers Tab -->
+        <div id="customers-tab" class="tab-content active">
+            <div class="section">
+                <h2>Customers</h2>
+                <button id="toggle-customers-btn" onclick="toggleCustomersList()">Get All Customers</button>
+                <div id="customers-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Customer</h3>
+                <div class="form-group"><label>First name</label><input id="customerFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="customerLastName"></div>
+                <div class="form-group"><label>Email</label><input id="customerEmail"></div>
+                <div class="form-group"><label>Password</label><input id="customerPassword" type="password"></div>
+                <div class="form-group"><label>Phone</label><input id="customerPhone"></div>
+                <div class="form-group"><label>Address</label><input id="customerAddress"></div>
+                <button onclick="addCustomer()">Add Customer</button>
+                <div id="add-customer-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Customer</h3>
+                <div class="form-group"><label>Get Customer by ID</label><input id="getCustomerId" placeholder="Customer ID"><button onclick="getCustomerById()">Get</button></div>
+                <div id="get-customer-result" class="results"></div>
+
+                <div class="form-group"><label>Update Customer ID</label><input id="updateCustomerId" placeholder="ID"></div>
+                <div class="form-group"><label>First name</label><input id="updateCustomerFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="updateCustomerLastName"></div>
+                <div class="form-group"><label>Email</label><input id="updateCustomerEmail"></div>
+                <div class="form-group"><label>Password</label><input id="updateCustomerPassword" type="password"></div>
+                <div class="form-group"><label>Phone</label><input id="updateCustomerPhone"></div>
+                <div class="form-group"><label>Address</label><input id="updateCustomerAddress"></div>
+                <button onclick="updateCustomer()">Update Customer</button>
+                <div id="update-customer-result"></div>
+
+                <div class="form-group"><label>Delete Customer by ID</label><input id="deleteCustomerId" placeholder="ID"></div>
+                <button onclick="deleteCustomer()" style="background:#c33;color:white">Delete Customer</button>
+                <div id="delete-customer-result"></div>
+            </div>
+        </div>
+
+        <!-- Mechanics Tab -->
+        <div id="mechanics-tab" class="tab-content">
+            <div class="section">
+                <h2>Mechanics</h2>
+                <button id="toggle-mechanics-btn" onclick="toggleMechanicsList()">Get All Mechanics</button>
+                <div id="mechanics-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Mechanic</h3>
+                <div class="form-group"><label>First name</label><input id="mechanicFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="mechanicLastName"></div>
+                <div class="form-group"><label>Email</label><input id="mechanicEmail"></div>
+                <div class="form-group"><label>Phone</label><input id="mechanicPhone"></div>
+                <div class="form-group"><label>Specialty</label><input id="mechanicSpecialty"></div>
+                <div class="form-group"><label>Hourly rate</label><input id="mechanicHourlyRate" type="number" step="0.01"></div>
+                <div class="form-group"><label>Hire date</label><input id="mechanicHireDate" type="date"></div>
+                <button onclick="addMechanic()">Add Mechanic</button>
+                <div id="add-mechanic-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Mechanic</h3>
+                <div class="form-group"><label>Get Mechanic by ID</label><input id="getMechanicId"><button onclick="getMechanicById()">Get</button></div>
+                <div id="get-mechanic-result" class="results"></div>
+
+                <div class="form-group"><label>Update Mechanic ID</label><input id="updateMechanicId"></div>
+                <div class="form-group"><label>First name</label><input id="updateMechanicFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="updateMechanicLastName"></div>
+                <div class="form-group"><label>Email</label><input id="updateMechanicEmail"></div>
+                <div class="form-group"><label>Phone</label><input id="updateMechanicPhone"></div>
+                <div class="form-group"><label>Specialty</label><input id="updateMechanicSpecialty"></div>
+                <div class="form-group"><label>Hourly rate</label><input id="updateMechanicHourlyRate" type="number" step="0.01"></div>
+                <div class="form-group"><label>Hire date</label><input id="updateMechanicHireDate" type="date"></div>
+                <button onclick="updateMechanic()">Update Mechanic</button>
+                <div id="update-mechanic-result"></div>
+
+                <div class="form-group"><label>Delete Mechanic by ID</label><input id="deleteMechanicId"></div>
+                <button onclick="deleteMechanic()" style="background:#c33;color:white">Delete Mechanic</button>
+                <div id="delete-mechanic-result"></div>
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory-tab" class="tab-content">
+            <div class="section">
+                <h2>Inventory</h2>
+                <button id="toggle-inventory-btn" onclick="toggleInventoryList()">Get All Items</button>
+                <div id="inventory-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Inventory Item</h3>
+                <div class="form-group"><label>Part name</label><input id="inventoryPartName"></div>
+                <div class="form-group"><label>Price</label><input id="inventoryPrice" type="number" step="0.01"></div>
+                <button onclick="addInventoryItem()">Add Item</button>
+                <div id="add-inventory-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Item</h3>
+                <div class="form-group"><label>Get by ID</label><input id="getInventoryId"><button onclick="getInventoryById()">Get</button></div>
+                <div id="get-inventory-result" class="results"></div>
+
+                <div class="form-group"><label>Update ID</label><input id="updateInventoryId"></div>
+                <div class="form-group"><label>Part name (optional)</label><input id="updateInventoryPartName"></div>
+                <div class="form-group"><label>Price (optional)</label><input id="updateInventoryPrice" type="number" step="0.01"></div>
+                <button onclick="updateInventoryItem()">Update Item</button>
+                <div id="update-inventory-result"></div>
+
+                <div class="form-group"><label>Delete ID</label><input id="deleteInventoryId"></div>
+                <button onclick="deleteInventoryItem()" style="background:#c33;color:white">Delete Item</button>
+                <div id="delete-inventory-result"></div>
+            </div>
+        </div>
+
+        <!-- Tickets Tab -->
+        <div id="tickets-tab" class="tab-content">
+            <div class="section">
+                <h2>Service Tickets</h2>
+                <button id="toggle-tickets-btn" onclick="toggleTicketsList()">Get All Tickets</button>
+                <div id="tickets-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Part to Ticket</h3>
+                <div class="form-group"><label>Ticket ID</label><input id="addPartTicketId"></div>
+                <div class="form-group"><label>Inventory/Part ID</label><input id="addPartInventoryId"></div>
+                <button onclick="addPartToTicket()">Add Part to Ticket</button>
+                <div id="add-part-to-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Remove Part from Ticket</h3>
+                <div class="form-group"><label>Ticket ID</label><input id="removePartTicketId"></div>
+                <div class="form-group"><label>Inventory/Part ID</label><input id="removePartInventoryId"></div>
+                <button onclick="removePartFromTicket()">Remove Part</button>
+                <div id="remove-part-from-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Create Service Ticket</h3>
+                <div class="form-group"><label>Customer ID</label><input id="ticketCustomerId"></div>
+                <div class="form-group"><label>Description</label><textarea id="ticketDescription" rows="2"></textarea></div>
+                <div class="form-group"><label>Vehicle Year</label><input id="ticketVehicleYear"></div>
+                <div class="form-group"><label>Vehicle Make</label><input id="ticketVehicleMake"></div>
+                <div class="form-group"><label>Vehicle Model</label><input id="ticketVehicleModel"></div>
+                <div class="form-group"><label>VIN</label><input id="ticketVehicleVin"></div>
+                <div class="form-group"><label>Assign Mechanic (ID, optional)</label><input id="ticketMechanicId"></div>
+                <div class="form-group"><label>Estimated Cost</label><input id="ticketEstimatedCost" type="number" step="0.01"></div>
+                <div class="form-group"><label>Status</label><select id="ticketStatus"><option>Open</option><option>In Progress</option><option>Closed</option></select></div>
+                <button onclick="createServiceTicket()">Create Ticket</button>
+                <div id="create-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Ticket</h3>
+                <div class="form-group"><label>Get Ticket by ID</label><input id="getTicketId"><button onclick="getTicketById()">Get</button></div>
+                <div id="get-ticket-result" class="results"></div>
+
+                <div class="form-group"><label>Update Ticket ID</label><input id="updateTicketId"></div>
+                <div class="form-group"><label>Description</label><input id="updateTicketDescription"></div>
+                <div class="form-group"><label>Actual Cost</label><input id="updateTicketActualCost" type="number" step="0.01"></div>
+                <div class="form-group"><label>Status</label><input id="updateTicketStatus"></div>
+                <div class="form-group"><label>Vehicle Year</label><input id="updateTicketVehicleYear"></div>
+                <div class="form-group"><label>Vehicle Make</label><input id="updateTicketVehicleMake"></div>
+                <div class="form-group"><label>Vehicle Model</label><input id="updateTicketVehicleModel"></div>
+                <div class="form-group"><label>VIN</label><input id="updateTicketVehicleVin"></div>
+                <div class="form-group"><label>Estimated Cost</label><input id="updateTicketEstimatedCost" type="number" step="0.01"></div>
+                <button onclick="updateServiceTicket()">Update Ticket</button>
+                <div id="update-ticket-result"></div>
+
+                <div class="form-group"><label>Delete Ticket by ID</label><input id="deleteTicketId"></div>
+                <button onclick="deleteServiceTicket()" style="background:#c33;color:white">Delete Ticket</button>
+                <div id="delete-ticket-result"></div>
+
+                <div class="form-group"><label>Assign Mechanic</label><input id="assignTicketId" placeholder="Ticket ID"><input id="assignMechanicId" placeholder="Mechanic ID"><button onclick="assignMechanicToTicket()">Assign</button></div>
+                <div id="assign-mechanic-result"></div>
+
+                <div class="form-group"><label>Remove Mechanic</label><input id="removeMechanicTicketId" placeholder="Ticket ID"><input id="removeMechanicId" placeholder="Mechanic ID"><button onclick="removeMechanicFromTicket()">Remove</button></div>
+                <div id="remove-mechanic-result"></div>
+
+                <div class="form-group"><label>Get Tickets by Customer ID</label><input id="ticketsByCustomerId"><button onclick="getTicketsByCustomer()">Get</button></div>
+                <div id="tickets-by-customer-result" class="results"></div>
+
+                <div class="form-group"><label>Get Tickets by Mechanic ID</label><input id="ticketsByMechanicId"><button onclick="getTicketsByMechanic()">Get</button></div>
+                <div id="tickets-by-mechanic-result" class="results"></div>
+            </div>
+        </div>
+
+        <hr>
+        <footer style="text-align:center;padding:1rem 0;color:#666">Mechanic Shop — Frontend Example</footer>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanic Shop - Customer Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Mechanic Shop — Customer Portal</h1>
+
+        <div id="auth-message" style="padding:.5rem;margin-bottom:1rem;background:#f0f0f0;border-radius:6px;">🔓 Not logged in</div>
+
+        <div class="section auth-required">
+            <h2>Account / Login</h2>
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input id="loginEmail" type="email" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" placeholder="password">
+            </div>
+            <button onclick="login()">Login</button>
+            <button onclick="logout()">Logout</button>
+            <div id="login-result"></div>
+            <div id="my-tickets-list" class="results" style="display:none;margin-top:0.5rem"></div>
+        </div>
+
+        <hr>
+
+        <nav style="display:flex;gap:.5rem;margin:1rem 0;">
+            <button class="tab" onclick="switchTab('customers')">Customers</button>
+            <button class="tab" onclick="switchTab('mechanics')">Mechanics</button>
+            <button class="tab" onclick="switchTab('inventory')">Inventory</button>
+            <button class="tab" onclick="switchTab('tickets')">Service Tickets</button>
+        </nav>
+
+        <!-- Customers Tab -->
+        <div id="customers-tab" class="tab-content active">
+            <div class="section">
+                <h2>Customers</h2>
+                <button id="toggle-customers-btn" onclick="toggleCustomersList()">Get All Customers</button>
+                <div id="customers-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Customer</h3>
+                <div class="form-group"><label>First name</label><input id="customerFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="customerLastName"></div>
+                <div class="form-group"><label>Email</label><input id="customerEmail"></div>
+                <div class="form-group"><label>Password</label><input id="customerPassword" type="password"></div>
+                <div class="form-group"><label>Phone</label><input id="customerPhone"></div>
+                <div class="form-group"><label>Address</label><input id="customerAddress"></div>
+                <button onclick="addCustomer()">Add Customer</button>
+                <div id="add-customer-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Customer</h3>
+                <div class="form-group"><label>Get Customer by ID</label><input id="getCustomerId" placeholder="Customer ID"><button onclick="getCustomerById()">Get</button></div>
+                <div id="get-customer-result" class="results"></div>
+
+                <div class="form-group"><label>Update Customer ID</label><input id="updateCustomerId" placeholder="ID"></div>
+                <div class="form-group"><label>First name</label><input id="updateCustomerFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="updateCustomerLastName"></div>
+                <div class="form-group"><label>Email</label><input id="updateCustomerEmail"></div>
+                <div class="form-group"><label>Password</label><input id="updateCustomerPassword" type="password"></div>
+                <div class="form-group"><label>Phone</label><input id="updateCustomerPhone"></div>
+                <div class="form-group"><label>Address</label><input id="updateCustomerAddress"></div>
+                <button onclick="updateCustomer()">Update Customer</button>
+                <div id="update-customer-result"></div>
+
+                <div class="form-group"><label>Delete Customer by ID</label><input id="deleteCustomerId" placeholder="ID"></div>
+                <button onclick="deleteCustomer()" style="background:#c33;color:white">Delete Customer</button>
+                <div id="delete-customer-result"></div>
+            </div>
+        </div>
+
+        <!-- Mechanics Tab -->
+        <div id="mechanics-tab" class="tab-content">
+            <div class="section">
+                <h2>Mechanics</h2>
+                <button id="toggle-mechanics-btn" onclick="toggleMechanicsList()">Get All Mechanics</button>
+                <div id="mechanics-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Mechanic</h3>
+                <div class="form-group"><label>First name</label><input id="mechanicFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="mechanicLastName"></div>
+                <div class="form-group"><label>Email</label><input id="mechanicEmail"></div>
+                <div class="form-group"><label>Phone</label><input id="mechanicPhone"></div>
+                <div class="form-group"><label>Specialty</label><input id="mechanicSpecialty"></div>
+                <div class="form-group"><label>Hourly rate</label><input id="mechanicHourlyRate" type="number" step="0.01"></div>
+                <div class="form-group"><label>Hire date</label><input id="mechanicHireDate" type="date"></div>
+                <button onclick="addMechanic()">Add Mechanic</button>
+                <div id="add-mechanic-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Mechanic</h3>
+                <div class="form-group"><label>Get Mechanic by ID</label><input id="getMechanicId"><button onclick="getMechanicById()">Get</button></div>
+                <div id="get-mechanic-result" class="results"></div>
+
+                <div class="form-group"><label>Update Mechanic ID</label><input id="updateMechanicId"></div>
+                <div class="form-group"><label>First name</label><input id="updateMechanicFirstName"></div>
+                <div class="form-group"><label>Last name</label><input id="updateMechanicLastName"></div>
+                <div class="form-group"><label>Email</label><input id="updateMechanicEmail"></div>
+                <div class="form-group"><label>Phone</label><input id="updateMechanicPhone"></div>
+                <div class="form-group"><label>Specialty</label><input id="updateMechanicSpecialty"></div>
+                <div class="form-group"><label>Hourly rate</label><input id="updateMechanicHourlyRate" type="number" step="0.01"></div>
+                <div class="form-group"><label>Hire date</label><input id="updateMechanicHireDate" type="date"></div>
+                <button onclick="updateMechanic()">Update Mechanic</button>
+                <div id="update-mechanic-result"></div>
+
+                <div class="form-group"><label>Delete Mechanic by ID</label><input id="deleteMechanicId"></div>
+                <button onclick="deleteMechanic()" style="background:#c33;color:white">Delete Mechanic</button>
+                <div id="delete-mechanic-result"></div>
+            </div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory-tab" class="tab-content">
+            <div class="section">
+                <h2>Inventory</h2>
+                <button id="toggle-inventory-btn" onclick="toggleInventoryList()">Get All Items</button>
+                <div id="inventory-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Inventory Item</h3>
+                <div class="form-group"><label>Part name</label><input id="inventoryPartName"></div>
+                <div class="form-group"><label>Price</label><input id="inventoryPrice" type="number" step="0.01"></div>
+                <button onclick="addInventoryItem()">Add Item</button>
+                <div id="add-inventory-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Item</h3>
+                <div class="form-group"><label>Get by ID</label><input id="getInventoryId"><button onclick="getInventoryById()">Get</button></div>
+                <div id="get-inventory-result" class="results"></div>
+
+                <div class="form-group"><label>Update ID</label><input id="updateInventoryId"></div>
+                <div class="form-group"><label>Part name (optional)</label><input id="updateInventoryPartName"></div>
+                <div class="form-group"><label>Price (optional)</label><input id="updateInventoryPrice" type="number" step="0.01"></div>
+                <button onclick="updateInventoryItem()">Update Item</button>
+                <div id="update-inventory-result"></div>
+
+                <div class="form-group"><label>Delete ID</label><input id="deleteInventoryId"></div>
+                <button onclick="deleteInventoryItem()" style="background:#c33;color:white">Delete Item</button>
+                <div id="delete-inventory-result"></div>
+            </div>
+        </div>
+
+        <!-- Tickets Tab -->
+        <div id="tickets-tab" class="tab-content">
+            <div class="section">
+                <h2>Service Tickets</h2>
+                <button id="toggle-tickets-btn" onclick="toggleTicketsList()">Get All Tickets</button>
+                <div id="tickets-list" class="results" style="display:none;margin-top:.5rem"></div>
+            </div>
+
+            <div class="section">
+                <h3>Add Part to Ticket</h3>
+                <div class="form-group"><label>Ticket ID</label><input id="addPartTicketId"></div>
+                <div class="form-group"><label>Inventory/Part ID</label><input id="addPartInventoryId"></div>
+                <button onclick="addPartToTicket()">Add Part to Ticket</button>
+                <div id="add-part-to-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Remove Part from Ticket</h3>
+                <div class="form-group"><label>Ticket ID</label><input id="removePartTicketId"></div>
+                <div class="form-group"><label>Inventory/Part ID</label><input id="removePartInventoryId"></div>
+                <button onclick="removePartFromTicket()">Remove Part</button>
+                <div id="remove-part-from-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Create Service Ticket</h3>
+                <div class="form-group"><label>Customer ID</label><input id="ticketCustomerId"></div>
+                <div class="form-group"><label>Description</label><textarea id="ticketDescription" rows="2"></textarea></div>
+                <div class="form-group"><label>Vehicle Year</label><input id="ticketVehicleYear"></div>
+                <div class="form-group"><label>Vehicle Make</label><input id="ticketVehicleMake"></div>
+                <div class="form-group"><label>Vehicle Model</label><input id="ticketVehicleModel"></div>
+                <div class="form-group"><label>VIN</label><input id="ticketVehicleVin"></div>
+                <div class="form-group"><label>Assign Mechanic (ID, optional)</label><input id="ticketMechanicId"></div>
+                <div class="form-group"><label>Estimated Cost</label><input id="ticketEstimatedCost" type="number" step="0.01"></div>
+                <div class="form-group"><label>Status</label><select id="ticketStatus"><option>Open</option><option>In Progress</option><option>Closed</option></select></div>
+                <button onclick="createServiceTicket()">Create Ticket</button>
+                <div id="create-ticket-result"></div>
+            </div>
+
+            <div class="section">
+                <h3>Get / Update / Delete Ticket</h3>
+                <div class="form-group"><label>Get Ticket by ID</label><input id="getTicketId"><button onclick="getTicketById()">Get</button></div>
+                <div id="get-ticket-result" class="results"></div>
+
+                <div class="form-group"><label>Update Ticket ID</label><input id="updateTicketId"></div>
+                <div class="form-group"><label>Description</label><input id="updateTicketDescription"></div>
+                <div class="form-group"><label>Actual Cost</label><input id="updateTicketActualCost" type="number" step="0.01"></div>
+                <div class="form-group"><label>Status</label><input id="updateTicketStatus"></div>
+                <div class="form-group"><label>Vehicle Year</label><input id="updateTicketVehicleYear"></div>
+                <div class="form-group"><label>Vehicle Make</label><input id="updateTicketVehicleMake"></div>
+                <div class="form-group"><label>Vehicle Model</label><input id="updateTicketVehicleModel"></div>
+                <div class="form-group"><label>VIN</label><input id="updateTicketVehicleVin"></div>
+                <div class="form-group"><label>Estimated Cost</label><input id="updateTicketEstimatedCost" type="number" step="0.01"></div>
+                <button onclick="updateServiceTicket()">Update Ticket</button>
+                <div id="update-ticket-result"></div>
+
+                <div class="form-group"><label>Delete Ticket by ID</label><input id="deleteTicketId"></div>
+                <button onclick="deleteServiceTicket()" style="background:#c33;color:white">Delete Ticket</button>
+                <div id="delete-ticket-result"></div>
+
+                <div class="form-group"><label>Assign Mechanic</label><input id="assignTicketId" placeholder="Ticket ID"><input id="assignMechanicId" placeholder="Mechanic ID"><button onclick="assignMechanicToTicket()">Assign</button></div>
+                <div id="assign-mechanic-result"></div>
+
+                <div class="form-group"><label>Remove Mechanic</label><input id="removeMechanicTicketId" placeholder="Ticket ID"><input id="removeMechanicId" placeholder="Mechanic ID"><button onclick="removeMechanicFromTicket()">Remove</button></div>
+                <div id="remove-mechanic-result"></div>
+
+                <div class="form-group"><label>Get Tickets by Customer ID</label><input id="ticketsByCustomerId"><button onclick="getTicketsByCustomer()">Get</button></div>
+                <div id="tickets-by-customer-result" class="results"></div>
+
+                <div class="form-group"><label>Get Tickets by Mechanic ID</label><input id="ticketsByMechanicId"><button onclick="getTicketsByMechanic()">Get</button></div>
+                <div id="tickets-by-mechanic-result" class="results"></div>
+            </div>
+        </div>
+
+        <hr>
+        <footer style="text-align:center;padding:1rem 0;color:#666">Mechanic Shop — Frontend Example</footer>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
 
         async function updateServiceTicket() {
             const resultDiv = document.getElementById('update-ticket-result');
