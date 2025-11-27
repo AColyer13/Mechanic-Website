@@ -922,6 +922,12 @@
                                     const tbtn = document.getElementById('toggle-tickets-btn');
                                     if (tbtn) tbtn.textContent = 'Hide';
                                     if (domElements && domElements.ticketsList) domElements.ticketsList.style.display = '';
+                                    // Auto-open ticket details so user can confirm parts were removed
+                                    try {
+                                        await viewTicketDetails(ticketId);
+                                    } catch (e) {
+                                        console.warn('Failed to auto-open ticket details after removing part:', e);
+                                    }
                             } catch (error) {
                                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
                             }
@@ -960,6 +966,12 @@
                                 const tbtn = document.getElementById('toggle-tickets-btn');
                                 if (tbtn) tbtn.textContent = 'Hide';
                                 if (domElements && domElements.ticketsList) domElements.ticketsList.style.display = '';
+                                // If the ticket card exists now, fetch and show its details
+                                try {
+                                    await viewTicketDetails(ticketId);
+                                } catch (e) {
+                                    console.warn('Failed to auto-open ticket details after adding part:', e);
+                                }
                             } catch (error) {
                                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
                             }
@@ -988,13 +1000,11 @@
                     const btn = document.getElementById('toggle-customers-btn');
                     const list = domElements.customersList;
                     if (!customersVisible) {
-                        // Show and fetch
                         btn.textContent = 'Hide';
                         list.style.display = '';
                         await getAllCustomers();
                         customersVisible = true;
                     } else {
-                        // Hide
                         btn.textContent = 'Get All Customers';
                         list.style.display = 'none';
                         customersVisible = false;
@@ -1007,13 +1017,11 @@
                     const btn = document.getElementById('toggle-mechanics-btn');
                     const list = domElements.mechanicsList;
                     if (!mechanicsVisible) {
-                        // Show and fetch
                         btn.textContent = 'Hide';
                         list.style.display = '';
                         await getAllMechanics();
                         mechanicsVisible = true;
                     } else {
-                        // Hide
                         btn.textContent = 'Get All Mechanics';
                         list.style.display = 'none';
                         mechanicsVisible = false;
@@ -1337,15 +1345,36 @@
                     const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
                         ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
                         : 'Not specified';
-                    
+                    // flexible parts detection
+                    let parts = [];
+                    if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
+                    else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
+                    else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
+
+                    let partsHtml = '';
+                    if (parts.length) {
+                        const items = parts.map(p => {
+                            const name = p.name || p.part_name || p.item_name || p.description || 'Part';
+                            const qty = p.quantity || p.qty || p.count || '';
+                            const price = p.price || p.unit_price || p.part_price || '';
+                            const qtyLabel = qty ? `, Qty: ${qty}` : '';
+                            const priceLabel = (typeof price === 'number' && !Number.isNaN(price)) ? ` — $${price.toFixed(2)}` : '';
+                            return `<li>${name} (ID: ${p.id || p.inventory_id || ''}${qtyLabel})${priceLabel}</li>`;
+                        }).join('');
+                        partsHtml = `<div style="margin-top:0.5rem;"><b>Parts:</b><ul style="margin:0.25rem 0 0 1.25rem;">${items}</ul></div>`;
+                    }
+
                     html += `
-                        <div class="data-card">
+                        <div class="data-card" id="ticket-card-${ticket.id}">
                             <h3>Ticket #${ticket.id}</h3>
                             <p><b>Vehicle:</b> ${vehicleInfo}</p>
                             <p><b>Description:</b> ${ticket.description}</p>
                             <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                            ${partsHtml}
                             ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
                             ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
+                            <div id="ticket-detail-${ticket.id}"></div>
+                            <div style="margin-top:8px;"><button onclick="viewTicketDetails(${ticket.id})">View Details</button></div>
                         </div>
                     `;
                 });
@@ -2249,14 +2278,35 @@
                     const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
                         ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
                         : 'Not specified';
-                    
+                    // flexible parts detection
+                    let parts = [];
+                    if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
+                    else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
+                    else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
+
+                    let partsHtml = '';
+                    if (parts.length) {
+                        const items = parts.map(p => {
+                            const name = p.name || p.part_name || p.item_name || p.description || 'Part';
+                            const qty = p.quantity || p.qty || p.count || '';
+                            const price = p.price || p.unit_price || p.part_price || '';
+                            const qtyLabel = qty ? `, Qty: ${qty}` : '';
+                            const priceLabel = (typeof price === 'number' && !Number.isNaN(price)) ? ` — $${price.toFixed(2)}` : '';
+                            return `<li>${name} (ID: ${p.id || p.inventory_id || ''}${qtyLabel})${priceLabel}</li>`;
+                        }).join('');
+                        partsHtml = `<div style="margin-top:0.5rem;"><b>Parts:</b><ul style="margin:0.25rem 0 0 1.25rem;">${items}</ul></div>`;
+                    }
+
                     html += `
-                        <div class="data-card">
+                        <div class="data-card" id="ticket-card-${ticket.id}">
                             <h3>Ticket #${ticket.id}</h3>
                             <p><b>Vehicle:</b> ${vehicleInfo}</p>
                             <p><b>Description:</b> ${ticket.description}</p>
                             <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                            ${partsHtml}
                             ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
+                            <div id="ticket-detail-${ticket.id}"></div>
+                            <div style="margin-top:8px;"><button onclick="viewTicketDetails(${ticket.id})">View Details</button></div>
                         </div>
                     `;
                 });
@@ -2302,15 +2352,36 @@
                     const customerName = ticket.customer 
                         ? `${ticket.customer.first_name} ${ticket.customer.last_name}`
                         : `Customer ID: ${ticket.customer_id}`;
-                    
+                    // flexible parts detection
+                    let parts = [];
+                    if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
+                    else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
+                    else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
+
+                    let partsHtml = '';
+                    if (parts.length) {
+                        const items = parts.map(p => {
+                            const name = p.name || p.part_name || p.item_name || p.description || 'Part';
+                            const qty = p.quantity || p.qty || p.count || '';
+                            const price = p.price || p.unit_price || p.part_price || '';
+                            const qtyLabel = qty ? `, Qty: ${qty}` : '';
+                            const priceLabel = (typeof price === 'number' && !Number.isNaN(price)) ? ` — $${price.toFixed(2)}` : '';
+                            return `<li>${name} (ID: ${p.id || p.inventory_id || ''}${qtyLabel})${priceLabel}</li>`;
+                        }).join('');
+                        partsHtml = `<div style="margin-top:0.5rem;"><b>Parts:</b><ul style="margin:0.25rem 0 0 1.25rem;">${items}</ul></div>`;
+                    }
+
                     html += `
-                        <div class="data-card">
+                        <div class="data-card" id="ticket-card-${ticket.id}">
                             <h3>Ticket #${ticket.id}</h3>
                             <p><b>Customer:</b> ${customerName}</p>
                             <p><b>Vehicle:</b> ${vehicleInfo}</p>
                             <p><b>Description:</b> ${ticket.description}</p>
                             <p><b>Status:</b> ${ticket.status || 'Open'}</p>
+                            ${partsHtml}
                             ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
+                            <div id="ticket-detail-${ticket.id}"></div>
+                            <div style="margin-top:8px;"><button onclick="viewTicketDetails(${ticket.id})">View Details</button></div>
                         </div>
                     `;
                 });
