@@ -2,6 +2,10 @@
 // Remove part from service ticket
 async function removePartFromTicket() {
 	const resultDiv = document.getElementById('remove-part-from-ticket-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const ticketId = document.getElementById('removePartTicketId').value;
 	const partId = document.getElementById('removePartInventoryId').value;
 	if (!ticketId || !partId) {
@@ -10,9 +14,7 @@ async function removePartFromTicket() {
 	}
 	resultDiv.innerHTML = '<div class="loading">Removing part from ticket...';
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/remove-part/${partId}`, {
-			method: 'PUT'
-		});
+		const response = await apiFetch(`/service-tickets/${ticketId}/remove-part/${partId}`, { method: 'PUT' });
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
@@ -27,6 +29,10 @@ async function removePartFromTicket() {
 // Add part to service ticket
 async function addPartToTicket() {
 	const resultDiv = document.getElementById('add-part-to-ticket-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const ticketId = document.getElementById('addPartTicketId').value;
 	const partId = document.getElementById('addPartInventoryId').value;
 	if (!ticketId || !partId) {
@@ -35,9 +41,7 @@ async function addPartToTicket() {
 	}
 	resultDiv.innerHTML = '<div class="loading">Adding part to ticket...</div>';
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/add-part/${partId}`, {
-			method: 'PUT'
-		});
+		const response = await apiFetch(`/service-tickets/${ticketId}/add-part/${partId}`, { method: 'PUT' });
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
@@ -147,7 +151,7 @@ async function getAllData(type, usePreload = true) {
 		if (usePreload && preloadedData[type]) {
 			data = preloadedData[type];
 		} else {
-			const response = await fetch(`${getApiUrl()}/${type === 'tickets' ? 'service-tickets' : type}/?_=${Date.now()}`);
+			const response = await apiFetch(`/${type === 'tickets' ? 'service-tickets' : type}/?_=${Date.now()}`);
 			data = await parseResponse(response, `retrieving all ${type}`);
 			preloadedData[type] = data;
 		}
@@ -235,10 +239,10 @@ async function refreshData(type) {
 async function preloadAllData() {
 	try {
 		const [customers, mechanics, inventory, tickets] = await Promise.all([
-			fetch(`${getApiUrl()}/customers/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading customers')),
-			fetch(`${getApiUrl()}/mechanics/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading mechanics')),
-			fetch(`${getApiUrl()}/inventory/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading inventory')),
-			fetch(`${getApiUrl()}/service-tickets/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading service tickets'))
+			apiFetch(`/customers/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading customers')),
+			apiFetch(`/mechanics/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading mechanics')),
+			apiFetch(`/inventory/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading inventory')),
+			apiFetch(`/service-tickets/?_=${Date.now()}`).then(res => parseResponse(res, 'preloading service tickets'))
 		]);
 		preloadedData.customers = customers;
 		preloadedData.mechanics = mechanics;
@@ -253,6 +257,9 @@ async function preloadAllData() {
 
 // Call preload on page load
 window.addEventListener('load', preloadAllData);
+// =========================
+// Configuration & helpers
+// =========================
 // API base URL (hardcoded)
 const API_URL = 'https://mechanic-api-copy-with-testing-and.onrender.com';
 let authToken = null;
@@ -260,6 +267,23 @@ let loggedInCustomer = null;
 
 function getApiUrl() {
 	return API_URL;
+}
+
+// Build headers helper — use json:true to add Content-Type, auth:true to include the Bearer header
+function buildHeaders({ json = false, auth = true, extra = {} } = {}) {
+	const headers = { ...extra };
+	if (json) headers['Content-Type'] = 'application/json';
+	if (auth && authToken) headers['Authorization'] = `Bearer ${authToken}`;
+	return headers;
+}
+
+// Lightweight wrapper over fetch to centralize URL/header construction
+async function apiFetch(path, { method = 'GET', json = null, auth = true, headers = {}, ...rest } = {}) {
+	const url = path.startsWith('http') ? path : `${getApiUrl()}${path}`;
+	const builtHeaders = buildHeaders({ json: json !== null, auth, extra: headers });
+	const opts = { method, headers: builtHeaders, ...rest };
+	if (json !== null) opts.body = JSON.stringify(json);
+	return fetch(url, opts);
 }
 
 // Parse fetch responses and produce rich errors for UI (handles 404, 308, etc.)
@@ -279,7 +303,24 @@ async function parseResponse(response, context = '') {
 		}
 		if (data) {
 			try {
-				const extra = typeof data === 'string' ? data : (data.error || JSON.stringify(data));
+				// Prefer common error fields (error, message, detail) and handle arrays of errors
+				let extra = '';
+				if (typeof data === 'string') {
+					extra = data;
+				} else if (data.error) {
+					extra = (typeof data.error === 'string') ? data.error : JSON.stringify(data.error);
+				} else if (data.message) {
+					extra = (typeof data.message === 'string') ? data.message : JSON.stringify(data.message);
+				} else if (data.detail) {
+					extra = (typeof data.detail === 'string') ? data.detail : JSON.stringify(data.detail);
+				} else if (data.errors) {
+					// `errors` may be an array or object — stringify sensibly
+					if (Array.isArray(data.errors)) extra = data.errors.join('; ');
+					else extra = JSON.stringify(data.errors);
+				} else {
+					extra = JSON.stringify(data);
+				}
+
 				if (extra) message += ` Response: ${extra}`;
 			} catch (e) {}
 		}
@@ -347,13 +388,7 @@ async function login() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/customers/login`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ email, password })
-		});
+		const response = await apiFetch(`/customers/login`, { method: 'POST', json: { email, password }, auth: false });
         
 		const data = await parseResponse(response, 'retrieving customers');
 		authToken = data.token;
@@ -389,11 +424,7 @@ async function getMyTickets() {
 	resultDiv.innerHTML = '<div class="loading">Loading your tickets...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/customers/my-tickets`, {
-			headers: {
-				'Authorization': `Bearer ${authToken}`
-			}
-		});
+		const response = await apiFetch(`/customers/my-tickets`);
         
 		const data = await parseResponse(response, 'fetching login result');
         
@@ -461,13 +492,7 @@ async function addCustomer() {
 	if (address) customerData.address = address;
     
 	try {
-		const response = await fetch(`${getApiUrl()}/customers/`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(customerData)
-		});
+		const response = await apiFetch(`/customers/`, { method: 'POST', json: customerData, auth: false });
         
 		const data = await parseResponse(response, 'retrieving mechanics');
 		resultDiv.innerHTML = `<div class="success">Customer added successfully! ID: ${data.id}</div>`;
@@ -498,6 +523,10 @@ async function refreshMechanics() {
 
 async function addMechanic() {
 	const resultDiv = document.getElementById('add-mechanic-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const firstName = document.getElementById('mechanicFirstName').value;
 	const lastName = document.getElementById('mechanicLastName').value;
 	const email = document.getElementById('mechanicEmail').value;
@@ -523,13 +552,7 @@ async function addMechanic() {
 	if (hireDate) mechanicData.hire_date = hireDate;
     
 	try {
-		const response = await fetch(`${getApiUrl()}/mechanics/`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(mechanicData)
-		});
+		const response = await apiFetch(`/mechanics/`, { method: 'POST', json: mechanicData });
         
 		const data = await parseResponse(response, 'getting mechanic by id');
 		resultDiv.innerHTML = `<div class="success">Mechanic added successfully! ID: ${data.id}</div>`;
@@ -581,7 +604,7 @@ async function getCustomerById() {
 	resultDiv.innerHTML = '<div class="loading">Loading customer...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/customers/${customerId}`);
+		const response = await apiFetch(`/customers/${customerId}`);
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -639,7 +662,7 @@ async function updateCustomer() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/customers/${customerId}`, {
+		const response = await apiFetch(`/customers/${customerId}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json',
@@ -684,7 +707,7 @@ async function deleteCustomer() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/customers/${customerId}`, {
+		const response = await apiFetch(`/customers/${customerId}`, {
 			method: 'DELETE',
 			headers: {
 				'Authorization': `Bearer ${authToken}`
@@ -725,7 +748,7 @@ async function getMechanicById() {
 	resultDiv.innerHTML = '<div class="loading">Loading mechanic...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/mechanics/${mechanicId}`);
+		const response = await apiFetch(`/mechanics/${mechanicId}`);
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -752,6 +775,10 @@ async function getMechanicById() {
 
 async function updateMechanic() {
 	const resultDiv = document.getElementById('update-mechanic-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const mechanicId = document.getElementById('updateMechanicId').value;
 	const firstName = document.getElementById('updateMechanicFirstName').value;
 	const lastName = document.getElementById('updateMechanicLastName').value;
@@ -781,13 +808,7 @@ async function updateMechanic() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/mechanics/${mechanicId}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(updateData)
-		});
+		const response = await apiFetch(`/mechanics/${mechanicId}`, { method: 'PUT', json: updateData });
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -811,6 +832,10 @@ async function updateMechanic() {
 
 async function deleteMechanic() {
 	const resultDiv = document.getElementById('delete-mechanic-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const mechanicId = document.getElementById('deleteMechanicId').value;
     
 	if (!mechanicId) {
@@ -823,9 +848,7 @@ async function deleteMechanic() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/mechanics/${mechanicId}`, {
-			method: 'DELETE'
-		});
+		const response = await apiFetch(`/mechanics/${mechanicId}`, { method: 'DELETE' });
         
 		const data = await response.json();
         
@@ -851,6 +874,10 @@ async function deleteMechanic() {
 // Additional Inventory Functions
 async function addInventoryItem() {
 	const resultDiv = document.getElementById('add-inventory-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const partName = document.getElementById('inventoryPartName').value;
 	const price = document.getElementById('inventoryPrice').value;
     
@@ -865,13 +892,7 @@ async function addInventoryItem() {
 			price: parseFloat(price)
 		};
 
-		const response = await fetch(`${getApiUrl()}/inventory/`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(body)
-		});
+		const response = await apiFetch(`/inventory/`, { method: 'POST', json: body });
 
 		const data = await parseResponse(response, 'adding inventory item');
 		resultDiv.innerHTML = `<div class="success">✅ Inventory item added! ID: ${data.id}</div>`;
@@ -899,7 +920,7 @@ async function getInventoryById() {
 	resultDiv.innerHTML = '<div class="loading">Loading inventory item...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`);
+		const response = await apiFetch(`/inventory/${inventoryId}`);
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
@@ -937,6 +958,10 @@ async function getInventoryById() {
 
 async function updateInventoryItem() {
 	const resultDiv = document.getElementById('update-inventory-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const inventoryId = document.getElementById('updateInventoryId').value;
 	const partName = document.getElementById('updateInventoryPartName').value;
 	const price = document.getElementById('updateInventoryPrice').value;
@@ -956,13 +981,7 @@ async function updateInventoryItem() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(updateData)
-		});
+		const response = await apiFetch(`/inventory/${inventoryId}`, { method: 'PUT', json: updateData });
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -981,6 +1000,10 @@ async function updateInventoryItem() {
 
 async function deleteInventoryItem() {
 	const resultDiv = document.getElementById('delete-inventory-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const inventoryId = document.getElementById('deleteInventoryId').value;
     
 	if (!inventoryId) {
@@ -993,9 +1016,7 @@ async function deleteInventoryItem() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/inventory/${inventoryId}`, {
-			method: 'DELETE'
-		});
+		const response = await apiFetch(`/inventory/${inventoryId}`, { method: 'DELETE' });
         
 		const data = await response.json();
         
@@ -1021,6 +1042,10 @@ async function deleteInventoryItem() {
 // Additional Service Ticket Functions
 async function createServiceTicket() {
 	const resultDiv = document.getElementById('create-ticket-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const customerId = document.getElementById('ticketCustomerId').value;
 	const description = document.getElementById('ticketDescription').value;
 	const vehicleYear = document.getElementById('ticketVehicleYear').value;
@@ -1050,13 +1075,7 @@ async function createServiceTicket() {
 	if (estimatedCost) ticketData.estimated_cost = parseFloat(estimatedCost);
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(ticketData)
-		});
+		const response = await apiFetch(`/service-tickets/`, { method: 'POST', json: ticketData });
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -1094,7 +1113,7 @@ async function getTicketById() {
 	resultDiv.innerHTML = '<div class="loading">Loading ticket...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`);
+		const response = await apiFetch(`/service-tickets/${ticketId}`);
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
@@ -1137,6 +1156,10 @@ async function getTicketById() {
 
 async function updateServiceTicket() {
 	const resultDiv = document.getElementById('update-ticket-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const ticketId = document.getElementById('updateTicketId').value;
 	const description = document.getElementById('updateTicketDescription').value;
 	const actualCost = document.getElementById('updateTicketActualCost').value;
@@ -1168,13 +1191,7 @@ async function updateServiceTicket() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(updateData)
-		});
+		const response = await apiFetch(`/service-tickets/${ticketId}`, { method: 'PUT', json: updateData });
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -1199,6 +1216,10 @@ async function updateServiceTicket() {
 
 async function deleteServiceTicket() {
 	const resultDiv = document.getElementById('delete-ticket-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const ticketId = document.getElementById('deleteTicketId').value;
     
 	if (!ticketId) {
@@ -1211,9 +1232,7 @@ async function deleteServiceTicket() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`, {
-			method: 'DELETE'
-		});
+		const response = await apiFetch(`/service-tickets/${ticketId}`, { method: 'DELETE' });
         
 		const data = await response.json();
         
@@ -1233,6 +1252,10 @@ async function deleteServiceTicket() {
 
 async function assignMechanicToTicket() {
 	const resultDiv = document.getElementById('assign-mechanic-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const ticketId = document.getElementById('assignTicketId').value;
 	const mechanicId = document.getElementById('assignMechanicId').value;
     
@@ -1242,9 +1265,7 @@ async function assignMechanicToTicket() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/assign-mechanic/${mechanicId}`, {
-			method: 'PUT'
-		});
+		const response = await apiFetch(`/service-tickets/${ticketId}/assign-mechanic/${mechanicId}`, { method: 'PUT' });
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -1262,6 +1283,10 @@ async function assignMechanicToTicket() {
 
 async function removeMechanicFromTicket() {
 	const resultDiv = document.getElementById('remove-mechanic-result');
+	if (!authToken) {
+		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
+		return;
+	}
 	const ticketId = document.getElementById('removeMechanicTicketId').value;
 	const mechanicId = document.getElementById('removeMechanicId').value;
     
@@ -1271,9 +1296,7 @@ async function removeMechanicFromTicket() {
 	}
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/remove-mechanic/${mechanicId}`, {
-			method: 'PUT'
-		});
+		const response = await apiFetch(`/service-tickets/${ticketId}/remove-mechanic/${mechanicId}`, { method: 'PUT' });
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -1301,7 +1324,7 @@ async function getTicketsByCustomer() {
 	resultDiv.innerHTML = '<div class="loading">Loading customer tickets...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/customer/${customerId}`);
+		const response = await apiFetch(`/service-tickets/customer/${customerId}`);
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);
@@ -1350,7 +1373,7 @@ async function getTicketsByMechanic() {
 	resultDiv.innerHTML = '<div class="loading">Loading mechanic tickets...</div>';
     
 	try {
-		const response = await fetch(`${getApiUrl()}/service-tickets/mechanic/${mechanicId}`);
+		const response = await apiFetch(`/service-tickets/mechanic/${mechanicId}`);
         
 		if (!response.ok) {
 			throw new Error(`HTTP error! status: ${response.status}`);

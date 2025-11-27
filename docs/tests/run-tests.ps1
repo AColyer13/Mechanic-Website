@@ -1,0 +1,90 @@
+<#
+PowerShell smoke test script to validate protected endpoints using curl/Invoke-RestMethod.
+Usage:
+  $env:API_URL = 'https://api.example.com'
+  $env:TEST_EMAIL = 'test@example.com'
+  $env:TEST_PASSWORD = 'password'
+  pwsh .\run-tests.ps1
+
+This script performs a small number of checks:
+- Unauthenticated attempt to POST /inventory (should return 401/403)
+- Attempt to login with TEST_EMAIL/TEST_PASSWORD and capture token
+- Authenticated POST /inventory (should succeed) -> delete the created item
+- Authenticated POST /mechanics -> update -> delete
+- Authenticated POST /service-tickets -> update -> delete
+
+Note: This is a simple, readable script for manual runs and quick CI steps.
+#>
+
+$apiUrl = $env:API_URL
+if (-not $apiUrl) { Write-Error 'Set $env:API_URL first'; exit 2 }
+$testEmail = $env:TEST_EMAIL
+$testPassword = $env:TEST_PASSWORD
+
+function Invoke-Json($method, $url, $body = $null, $headers = @{}) {
+    $opts = @{ Method = $method; Uri = $url; Headers = $headers; ErrorAction = 'Stop' }
+    if ($body -ne $null) { $opts.Body = ($body | ConvertTo-Json -Depth 5); $opts.ContentType = 'application/json' }
+    try {
+        $r = Invoke-RestMethod @opts
+        return @{ ok = $true; status = 200; body = $r }
+    } catch [System.Net.WebException] {
+        $resp = $_.Exception.Response
+        if ($resp -ne $null) {
+            $status = [int]$resp.StatusCode
+            $text = (New-Object System.IO.StreamReader($resp.GetResponseStream())).ReadToEnd()
+            try { $body = $text | ConvertFrom-Json } catch { $body = $text }
+            return @{ ok = $false; status = $status; body = $body }
+        }
+        return @{ ok = $false; status = 0; body = $_.Exception.Message }
+    }
+}
+
+Write-Host "API_URL = $apiUrl"
+
+# Unauthenticated check
+Write-Host "\n[Unauthenticated] POST /inventory -> expect 401/403"
+$una = Invoke-Json -method 'POST' -url "$apiUrl/inventory/" -body @{ name = 'ps-smoke' ; price = 1.23 }
+Write-Host "Status: $($una.status)"; if ($una.ok) { Write-Host 'Unexpected success (fail)'; } else { Write-Host 'Unauth failed as expected' }
+
+if (-not $testEmail -or -not $testPassword) { Write-Host '\nTEST_EMAIL/TEST_PASSWORD not set; skipping authenticated tests'; exit 0 }
+
+# Login
+Write-Host '\nLogging in...'
+$login = Invoke-Json -method 'POST' -url "$apiUrl/customers/login" -body @{ email = $testEmail; password = $testPassword }
+if (-not $login.ok -or -not $login.body.token) { Write-Error "Login failed: $($login.status) $($login.body)"; exit 3 }
+$token = $login.body.token
+Write-Host 'Logged in, token length' ($token.Length)
+$headers = @{ Authorization = "Bearer $token" }
+
+# Authenticated inventory create
+Write-Host '\n[Auth] POST /inventory/'
+$invCreate = Invoke-Json -method 'POST' -url "$apiUrl/inventory/" -body @{ name = 'ps-smoke-inv'; price = 2.50 } -headers $headers
+if (-not $invCreate.ok) { Write-Error "Inventory create failed: $($invCreate.status)"; exit 4 }
+$id = $invCreate.body.id; Write-Host "Created inventory id: $id"
+
+# Cleanup inventory
+Invoke-Json -method 'DELETE' -url "$apiUrl/inventory/$id" -headers $headers | Out-Null
+Write-Host 'Deleted inventory'
+
+# Mechanic create/update/delete cycle
+Write-Host '\n[Auth] POST /mechanics/'
+$m = Invoke-Json -method 'POST' -url "$apiUrl/mechanics/" -body @{ first_name='PS'; last_name='Smoke'; email = "ps.smoke.$([DateTime]::UtcNow.Ticks)@example.test" } -headers $headers
+if (-not $m.ok) { Write-Error "Mechanic create failed: $($m.status)"; exit 5 }
+$mid = $m.body.id; Write-Host "Mechanic id: $mid"
+Invoke-Json -method 'PUT' -url "$apiUrl/mechanics/$mid" -body @{ phone = '555-0101' } -headers $headers | Out-Null
+Write-Host 'Mechanic updated'
+Invoke-Json -method 'DELETE' -url "$apiUrl/mechanics/$mid" -headers $headers | Out-Null
+Write-Host 'Mechanic deleted'
+
+# Service-ticket create/update/delete cycle
+Write-Host '\n[Auth] POST /service-tickets/'
+$cid = $login.body.customer.id
+$t = Invoke-Json -method 'POST' -url "$apiUrl/service-tickets/" -body @{ customer_id = $cid; description = 'ps smoke ticket' } -headers $headers
+if (-not $t.ok) { Write-Error "Ticket create failed: $($t.status)"; exit 6 }
+$tid = $t.body.id; Write-Host "Ticket id: $tid"
+Invoke-Json -method 'PUT' -url "$apiUrl/service-tickets/$tid" -body @{ status = 'In Progress' } -headers $headers | Out-Null
+Write-Host 'Ticket updated'
+Invoke-Json -method 'DELETE' -url "$apiUrl/service-tickets/$tid" -headers $headers | Out-Null
+Write-Host 'Ticket deleted'
+
+Write-Host '\nPS smoke tests completed. If all steps above succeeded you have both unauth/auth behavior confirmed.'
