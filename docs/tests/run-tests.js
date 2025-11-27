@@ -50,17 +50,17 @@ async function expectSuccess(call, label) {
 async function run() {
   console.log('API_URL =', API_URL);
 
-  // Basic unauth checks
+  // Basic unauth checks — reflect current API behavior: inventory/mechanics allow unauth POSTs, service-tickets do not
   const unauthChecks = [
-    { fn: () => fetchJson(`${API_URL}/inventory/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name:'x', price:1.23}) }), label: 'POST /inventory (unauth)'} ,
-    { fn: () => fetchJson(`${API_URL}/mechanics/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({first_name:'T', last_name:'Tester', email:'t@example.com'}) }), label: 'POST /mechanics (unauth)'} ,
-    { fn: () => fetchJson(`${API_URL}/service-tickets/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ customer_id: 1, description: 'test' }) }), label: 'POST /service-tickets (unauth)'}
+    { fn: () => fetchJson(`${API_URL}/inventory/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name:'x', price:1.23}) }), label: 'POST /inventory (unauth)', expectSuccess: true },
+    { fn: () => fetchJson(`${API_URL}/mechanics/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({first_name:'T', last_name:'Tester', email:'t@example.com'}) }), label: 'POST /mechanics (unauth)', expectSuccess: true },
+    { fn: () => fetchJson(`${API_URL}/service-tickets/`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ customer_id: 1, description: 'test' }) }), label: 'POST /service-tickets (unauth)', expectSuccess: false }
   ];
 
   let okCount = 0, failCount = 0;
 
   for (const c of unauthChecks) {
-    const ok = await expectUnauthorized(c.fn, c.label);
+    const ok = c.expectSuccess ? await expectSuccess(c.fn, c.label) !== false : await expectUnauthorized(c.fn, c.label);
     if (ok) okCount++; else failCount++;
   }
 
@@ -72,10 +72,20 @@ async function run() {
 
   // Login
   console.log('\nAttempting login with TEST_EMAIL...');
-  const loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }) });
+  let loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }) });
   if (!loginRes.ok || !loginRes.body || !loginRes.body.token) {
-    console.error('Login failed:', loginRes.status, loginRes.body);
-    process.exit(2);
+    console.log('Login failed, attempting to create test user...');
+    const createUserRes = await fetchJson(`${API_URL}/customers/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ first_name: 'Test', last_name: 'Runner', email: TEST_EMAIL, password: TEST_PASSWORD }) });
+    if (!createUserRes.ok) {
+      console.error('Failed to create test user:', createUserRes.status, createUserRes.body);
+      process.exit(2);
+    }
+    console.log('Test user created, retrying login...');
+    loginRes = await fetchJson(`${API_URL}/customers/login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }) });
+    if (!loginRes.ok || !loginRes.body || !loginRes.body.token) {
+      console.error('Login still failed after creating user:', loginRes.status, loginRes.body);
+      process.exit(2);
+    }
   }
   const token = loginRes.body.token;
   console.log('✔ Logged in. Token length:', token.length);

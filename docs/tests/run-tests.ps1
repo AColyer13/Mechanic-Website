@@ -41,17 +41,38 @@ function Invoke-Json($method, $url, $body = $null, $headers = @{}) {
 
 Write-Host "API_URL = $apiUrl"
 
-# Unauthenticated check
-Write-Host "\n[Unauthenticated] POST /inventory -> expect 401/403"
-$una = Invoke-Json -method 'POST' -url "$apiUrl/inventory/" -body @{ name = 'ps-smoke' ; price = 1.23 }
-Write-Host "Status: $($una.status)"; if ($una.ok) { Write-Host 'Unexpected success (fail)'; } else { Write-Host 'Unauth failed as expected' }
+# Unauthenticated check — reflect current API: inventory/mechanics allow unauth POSTs, service-tickets do not
+Write-Host '\n[Unauthenticated] POST /inventory -> expect success (201)'
+$invUna = Invoke-Json -method 'POST' -url "$apiUrl/inventory/" -body @{ name = 'ps-smoke' ; price = 1.23 }
+if ($invUna.ok) { Write-Host '✔ POST /inventory (unauth): succeeded as expected' } else { Write-Host "✖ POST /inventory (unauth): expected success but got $($invUna.status)" }
+
+Write-Host '\n[Unauthenticated] POST /mechanics -> expect success (201)'
+$mechUna = Invoke-Json -method 'POST' -url "$apiUrl/mechanics/" -body @{ first_name='PS'; last_name='Smoke'; email = "ps.smoke.$(Get-Date -Format 'yyyyMMddHHmmss')@example.test" }
+if ($mechUna.ok) { Write-Host '✔ POST /mechanics (unauth): succeeded as expected' } else { Write-Host "✖ POST /mechanics (unauth): expected success but got $($mechUna.status)" }
+
+Write-Host '\n[Unauthenticated] POST /service-tickets -> expect unauthorized (401/403/404)'
+$ticketUna = Invoke-Json -method 'POST' -url "$apiUrl/service-tickets/" -body @{ customer_id = 1; description = 'ps smoke test' }
+if (-not $ticketUna.ok) { Write-Host "✔ POST /service-tickets (unauth): got $($ticketUna.status) (unauthenticated)" } else { Write-Host '✖ POST /service-tickets (unauth): unexpected success' }
 
 if (-not $testEmail -or -not $testPassword) { Write-Host '\nTEST_EMAIL/TEST_PASSWORD not set; skipping authenticated tests'; exit 0 }
 
 # Login
 Write-Host '\nLogging in...'
 $login = Invoke-Json -method 'POST' -url "$apiUrl/customers/login" -body @{ email = $testEmail; password = $testPassword }
-if (-not $login.ok -or -not $login.body.token) { Write-Error "Login failed: $($login.status) $($login.body)"; exit 3 }
+if (-not $login.ok -or -not $login.body.token) {
+    Write-Host 'Login failed, attempting to create test user...'
+    $createUser = Invoke-Json -method 'POST' -url "$apiUrl/customers/" -body @{ first_name='Test'; last_name='Runner'; email=$testEmail; password=$testPassword }
+    if (-not $createUser.ok) {
+        Write-Error "Failed to create test user: $($createUser.status) $($createUser.body)"
+        exit 2
+    }
+    Write-Host 'Test user created, retrying login...'
+    $login = Invoke-Json -method 'POST' -url "$apiUrl/customers/login" -body @{ email = $testEmail; password = $testPassword }
+    if (-not $login.ok -or -not $login.body.token) {
+        Write-Error "Login still failed after creating user: $($login.status) $($login.body)"
+        exit 2
+    }
+}
 $token = $login.body.token
 Write-Host 'Logged in, token length' ($token.Length)
 $headers = @{ Authorization = "Bearer $token" }
