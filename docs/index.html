@@ -903,10 +903,7 @@
                                     const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/remove-part/${partId}`, {
                                         method: 'PUT'
                                     });
-                                    if (!response.ok) {
-                                        throw new Error(`HTTP error! status: ${response.status}`);
-                                    }
-                                    const data = await response.json();
+                                    const data = await parseResponse(response, 'removing part from ticket');
                                     console.log('removePart response:', data);
                                     resultDiv.innerHTML = `<div class="success">✅ Part removed from ticket!</div>`;
                                     document.getElementById('removePartTicketId').value = '';
@@ -947,10 +944,7 @@
                                 const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/add-part/${partId}`, {
                                     method: 'PUT'
                                 });
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                }
-                                const data = await response.json();
+                                const data = await parseResponse(response, 'adding part to ticket');
                                 console.log('addPart response:', data);
                                 resultDiv.innerHTML = `<div class="success">✅ Part added to ticket!</div>`;
                                 document.getElementById('addPartTicketId').value = '';
