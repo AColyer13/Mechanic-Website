@@ -90,7 +90,7 @@ async function run() {
     console.warn('No inventory id returned; stopping inventory cycle');
   } else {
     await expectSuccess(() => fetchJson(`${API_URL}/inventory/${invId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ price: 10.50 }) }), 'PUT /inventory/:id (auth)');
-    await expectSuccess(() => fetchJson(`${API_URL}/inventory/${invId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }), 'DELETE /inventory/:id (auth)');
+    // keep inventory item around until after tickets tests (to test add/remove part)
   }
 
   // Create mechanic -> update -> delete cycle
@@ -101,10 +101,19 @@ async function run() {
     await expectSuccess(() => fetchJson(`${API_URL}/mechanics/${mechId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }), 'DELETE /mechanics/:id (auth)');
   }
 
-  // Create service-ticket -> update -> delete
+  // Create service-ticket -> add/remove part -> update -> delete
   const ticketCreate = await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ customer_id: loginRes.body.customer ? loginRes.body.customer.id : undefined || 1, description: 'smoke test ticket' }) }), 'POST /service-tickets (auth)');
   const ticketId = ticketCreate && ticketCreate.body && ticketCreate.body.id ? ticketCreate.body.id : null;
   if (ticketId) {
+    // If we created an inventory item earlier, test add-part/remove-part against this ticket
+    if (invId) {
+      await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/${ticketId}/add-part/${invId}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }), 'PUT /service-tickets/:ticketId/add-part/:partId (auth)');
+      await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/${ticketId}/remove-part/${invId}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } }), 'PUT /service-tickets/:ticketId/remove-part/:partId (auth)');
+      // cleanup inventory now that add/remove was exercised
+      await expectSuccess(() => fetchJson(`${API_URL}/inventory/${invId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }), 'DELETE /inventory/:id (auth)');
+    } else {
+      console.log('⚠ Skipping add/remove part checks because no inventory id was created earlier in the run.');
+    }
     await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/${ticketId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: 'In Progress' }) }), 'PUT /service-tickets/:id (auth)');
     await expectSuccess(() => fetchJson(`${API_URL}/service-tickets/${ticketId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }), 'DELETE /service-tickets/:id (auth)');
   }

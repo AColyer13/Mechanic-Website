@@ -56,15 +56,13 @@ $token = $login.body.token
 Write-Host 'Logged in, token length' ($token.Length)
 $headers = @{ Authorization = "Bearer $token" }
 
-# Authenticated inventory create
+# Authenticated inventory create (keep item around so we can add/remove it to a ticket)
 Write-Host '\n[Auth] POST /inventory/'
 $invCreate = Invoke-Json -method 'POST' -url "$apiUrl/inventory/" -body @{ name = 'ps-smoke-inv'; price = 2.50 } -headers $headers
 if (-not $invCreate.ok) { Write-Error "Inventory create failed: $($invCreate.status)"; exit 4 }
 $id = $invCreate.body.id; Write-Host "Created inventory id: $id"
 
-# Cleanup inventory
-Invoke-Json -method 'DELETE' -url "$apiUrl/inventory/$id" -headers $headers | Out-Null
-Write-Host 'Deleted inventory'
+
 
 # Mechanic create/update/delete cycle
 Write-Host '\n[Auth] POST /mechanics/'
@@ -76,15 +74,29 @@ Write-Host 'Mechanic updated'
 Invoke-Json -method 'DELETE' -url "$apiUrl/mechanics/$mid" -headers $headers | Out-Null
 Write-Host 'Mechanic deleted'
 
-# Service-ticket create/update/delete cycle
+# Service-ticket create/add-part/remove-part/update/delete cycle
 Write-Host '\n[Auth] POST /service-tickets/'
 $cid = $login.body.customer.id
 $t = Invoke-Json -method 'POST' -url "$apiUrl/service-tickets/" -body @{ customer_id = $cid; description = 'ps smoke ticket' } -headers $headers
 if (-not $t.ok) { Write-Error "Ticket create failed: $($t.status)"; exit 6 }
 $tid = $t.body.id; Write-Host "Ticket id: $tid"
-Invoke-Json -method 'PUT' -url "$apiUrl/service-tickets/$tid" -body @{ status = 'In Progress' } -headers $headers | Out-Null
-Write-Host 'Ticket updated'
-Invoke-Json -method 'DELETE' -url "$apiUrl/service-tickets/$tid" -headers $headers | Out-Null
-Write-Host 'Ticket deleted'
+    # Try adding the inventory item to the ticket (if inventory created)
+    if ($id) {
+        Write-Host "Attempting to add inventory item $id to ticket $tid"
+        $add = Invoke-Json -method 'PUT' -url "$apiUrl/service-tickets/$tid/add-part/$id" -headers $headers
+        Write-Host "Add-part status: $($add.status)"
+        Write-Host 'Now attempting remove-part'
+        $remove = Invoke-Json -method 'PUT' -url "$apiUrl/service-tickets/$tid/remove-part/$id" -headers $headers
+        Write-Host "Remove-part status: $($remove.status)"
+
+        # Cleanup inventory after the ticket checks
+        Invoke-Json -method 'DELETE' -url "$apiUrl/inventory/$id" -headers $headers | Out-Null
+        Write-Host "Deleted inventory $id"
+    } else { Write-Host 'No inventory id available; skipping add/remove part checks' }
+
+    Invoke-Json -method 'PUT' -url "$apiUrl/service-tickets/$tid" -body @{ status = 'In Progress' } -headers $headers | Out-Null
+    Write-Host 'Ticket updated'
+    Invoke-Json -method 'DELETE' -url "$apiUrl/service-tickets/$tid" -headers $headers | Out-Null
+    Write-Host 'Ticket deleted'
 
 Write-Host '\nPS smoke tests completed. If all steps above succeeded you have both unauth/auth behavior confirmed.'

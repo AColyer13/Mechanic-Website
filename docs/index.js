@@ -9,18 +9,24 @@ async function removePartFromTicket() {
 	const ticketId = document.getElementById('removePartTicketId').value;
 	const partId = document.getElementById('removePartInventoryId').value;
 	if (!ticketId || !partId) {
-		resultDiv.innerHTML = '<div class="error">Please enter both Ticket ID and Part ID!';
+		resultDiv.innerHTML = '<div class="error">Please enter both Ticket ID and Part ID!</div>';
 		return;
 	}
-	resultDiv.innerHTML = '<div class="loading">Removing part from ticket...';
+	resultDiv.innerHTML = '<div class="loading">Removing part from ticket...</div>';
 	try {
-		const response = await apiFetch(`/service-tickets/${ticketId}/remove-part/${partId}`, { method: 'PUT' });
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+		const path = `/service-tickets/${ticketId}/remove-part/${partId}`;
+		let response = await apiFetch(path, { method: 'PUT' });
+		// If server replies with 308 Permanent Redirect (often means trailing slash expected), retry once with trailing slash
+		if (response.status === 308 && !path.endsWith('/')) {
+			response = await apiFetch(path + '/', { method: 'PUT' });
 		}
-		resultDiv.innerHTML = `<div class="success">✅ Part removed from ticket!</div>`;
+		// Use parseResponse to surface any backend JSON error details
+		const data = await parseResponse(response, 'removing part from ticket');
+		resultDiv.innerHTML = `<div class="success">✅ Part removed from ticket!${data && data.id ? ' — Updated ticket #' + data.id : ''}</div>`;
 		document.getElementById('removePartTicketId').value = '';
 		document.getElementById('removePartInventoryId').value = '';
+		// Update tickets list to reflect the change
+		setTimeout(() => refreshTickets(), 500);
 	} catch (error) {
 		resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
 	}
@@ -41,13 +47,17 @@ async function addPartToTicket() {
 	}
 	resultDiv.innerHTML = '<div class="loading">Adding part to ticket...</div>';
 	try {
-		const response = await apiFetch(`/service-tickets/${ticketId}/add-part/${partId}`, { method: 'PUT' });
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
+		const path = `/service-tickets/${ticketId}/add-part/${partId}`;
+		let response = await apiFetch(path, { method: 'PUT' });
+		if (response.status === 308 && !path.endsWith('/')) {
+			response = await apiFetch(path + '/', { method: 'PUT' });
 		}
-		resultDiv.innerHTML = `<div class="success">✅ Part added to ticket!</div>`;
+		const data = await parseResponse(response, 'adding part to ticket');
+		resultDiv.innerHTML = `<div class="success">✅ Part added to ticket!${data && data.id ? ' — Updated ticket #' + data.id : ''}</div>`;
 		document.getElementById('addPartTicketId').value = '';
 		document.getElementById('addPartInventoryId').value = '';
+		// Refresh tickets view so the new part appears
+		setTimeout(() => refreshTickets(), 500);
 	} catch (error) {
 		resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
 	}

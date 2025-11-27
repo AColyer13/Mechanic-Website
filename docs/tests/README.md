@@ -43,6 +43,7 @@ Test behavior (both tools)
 - Logs in with test credentials to receive a token.
 - Repeats protected writes (inventory/mechanics/service-tickets) using Authorization: Bearer TOKEN and verifies successful responses.
 - Attempts a simple create -> update -> delete cycle for inventory, mechanics and tickets.
+ - Also tests adding and removing a part on a service ticket (PUT /service-tickets/:ticketId/add-part/:partId and remove-part) during the authenticated cycle when an inventory item is available.
 
 Exit codes
 - 0: All checks passed or the script was aborted early for missing credentials (node runner will exit non-zero if unauth failures or auth checks fail depending on configuration).
@@ -53,3 +54,20 @@ Notes & safety
 - Provide a stable test user via `TEST_EMAIL` on your API that is allowed to run these operations.
 
 If you want, I can also add a small GitHub Actions workflow to run these on push or add a `package.json` that installs node-fetch for older Node versions. Want me to add either of those?
+
+CI / GitHub Actions
+-------------------
+
+I've added a GitHub Actions workflow at `.github/workflows/smoke-tests.yml` which will run the Node and PowerShell smoke tests on:
+
+- pushes to `main`
+- pull requests targeting `main`
+- manual dispatch from the Actions UI
+
+Before the workflow will run successfully you must add the following repository secrets (Settings → Secrets):
+
+- `API_URL` — the base URL of the test/staging API (e.g. https://staging-api.example.com)
+- `TEST_EMAIL` — email of a test user that exists in the environment and can perform mutations
+- `TEST_PASSWORD` — password for that test user
+
+Important: These tests create and delete resources. Only run them against a test/staging environment with a safe test account.
