@@ -572,10 +572,8 @@ async function refreshMechanics() {
 
 async function addMechanic() {
 	const resultDiv = document.getElementById('add-mechanic-result');
-	if (!authToken) {
-		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
-		return;
-	}
+	// This endpoint is allowed without authentication in some API deployments;
+	// call without auth so public creation works when the backend allows it.
 	const firstName = document.getElementById('mechanicFirstName').value;
 	const lastName = document.getElementById('mechanicLastName').value;
 	const email = document.getElementById('mechanicEmail').value;
@@ -601,7 +599,7 @@ async function addMechanic() {
 	if (hireDate) mechanicData.hire_date = hireDate;
     
 	try {
-		const response = await apiFetch(`/mechanics/`, { method: 'POST', json: mechanicData });
+		const response = await apiFetch(`/mechanics/`, { method: 'POST', json: mechanicData, auth: false });
         
 		const data = await parseResponse(response, 'getting mechanic by id');
 		resultDiv.innerHTML = `<div class="success">Mechanic added successfully! ID: ${data.id}</div>`;
@@ -923,10 +921,7 @@ async function deleteMechanic() {
 // Additional Inventory Functions
 async function addInventoryItem() {
 	const resultDiv = document.getElementById('add-inventory-result');
-	if (!authToken) {
-		resultDiv.innerHTML = '<div class="error">Please login first!</div>';
-		return;
-	}
+	// Some deployments allow unauthenticated inventory creation; do not require auth here.
 	const partName = document.getElementById('inventoryPartName').value;
 	const price = document.getElementById('inventoryPrice').value;
     
@@ -941,7 +936,7 @@ async function addInventoryItem() {
 			price: parseFloat(price)
 		};
 
-		const response = await apiFetch(`/inventory/`, { method: 'POST', json: body });
+		const response = await apiFetch(`/inventory/`, { method: 'POST', json: body, auth: false });
 
 		const data = await parseResponse(response, 'adding inventory item');
 		resultDiv.innerHTML = `<div class="success">✅ Inventory item added! ID: ${data.id}</div>`;
