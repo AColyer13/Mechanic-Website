@@ -50,6 +50,12 @@ body{
 .col-30{flex:.3}
 .col-70{flex:.7}
 
+/* Tabs */
+.tab { background: transparent; border: 1px solid rgba(11,17,32,0.06); padding: .45rem .75rem; border-radius:8px; cursor:pointer }
+.tab.active { background: var(--accent); color: white; border-color: rgba(6,182,212,0.12) }
+.tab-content { display: none; margin-top: 1rem }
+.tab-content.active { display: block }
+
 /* Card */
 .card{background:var(--card);border-radius:8px;padding:1rem;box-shadow:0 6px 18px rgba(11,17,32,0.06);border:1px solid rgba(11,17,32,0.04)}
 .card h2{font-size:1rem;margin-bottom:.5rem}

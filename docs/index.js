@@ -266,7 +266,30 @@ async function preloadAllData() {
 }
 
 // Call preload on page load
-window.addEventListener('load', preloadAllData);
+// Initialize tabs and preload data on page load
+function initTabs() {
+	// Ensure only the customers tab is active on start
+	document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+	const first = document.getElementById('customers-tab');
+	if (first) first.classList.add('active');
+
+	// Mark first nav button active
+	document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+	const firstBtn = document.querySelector('.tab');
+	if (firstBtn) firstBtn.classList.add('active');
+
+	// Hide any results areas until explicitly requested
+	document.querySelectorAll('.results').forEach(r => r.style.display = 'none');
+
+	// Reset visibility flags/buttons
+	customersVisible = false; mechanicsVisible = false; inventoryVisible = false; ticketsVisible = false;
+	try { document.getElementById('toggle-customers-btn').textContent = 'Get All Customers' } catch(e){}
+	try { document.getElementById('toggle-mechanics-btn').textContent = 'Get All Mechanics' } catch(e){}
+	try { document.getElementById('toggle-inventory-btn').textContent = 'Get All Items' } catch(e){}
+	try { document.getElementById('toggle-tickets-btn').textContent = 'Get All Tickets' } catch(e){}
+}
+
+window.addEventListener('DOMContentLoaded', () => { initTabs(); preloadAllData(); });
 // =========================
 // Configuration & helpers
 // =========================
@@ -372,18 +395,34 @@ function updateAuthStatus() {
 }
 
 // Tab switching
-function switchTab(tabName) {
-	// Hide all tabs
+function switchTab(tabName, btn) {
+	// Hide all tabs and hide their data lists so items are not visible off-page
 	document.querySelectorAll('.tab-content').forEach(tab => {
+		// hide visual tab
 		tab.classList.remove('active');
+		// hide any .results inside hidden tabs
+		tab.querySelectorAll('.results').forEach(r => {
+			r.style.display = 'none';
+			// clear content so it won't be visible if accidentally un-hidden
+			// keep cached data in `preloadedData` so it can be re-rendered on demand
+			// but do not render automatically
+			// r.innerHTML = '';
+		});
 	});
-	document.querySelectorAll('.tab').forEach(tab => {
-		tab.classList.remove('active');
-	});
-    
+	// Reset tab buttons active state
+	document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+	// Reset visibility flags and button labels so toggles behave consistently when returning to a tab
+	customersVisible = false; document.getElementById('toggle-customers-btn').textContent = 'Get All Customers';
+	mechanicsVisible = false; document.getElementById('toggle-mechanics-btn').textContent = 'Get All Mechanics';
+	inventoryVisible = false; document.getElementById('toggle-inventory-btn').textContent = 'Get All Items';
+	ticketsVisible = false; document.getElementById('toggle-tickets-btn').textContent = 'Get All Tickets';
+
 	// Show selected tab
-	document.getElementById(tabName + '-tab').classList.add('active');
-	event.target.classList.add('active');
+	const tabEl = document.getElementById(tabName + '-tab');
+	if (tabEl) tabEl.classList.add('active');
+	// Mark the clicked button active (if provided)
+	if (btn && btn.classList) btn.classList.add('active');
 }
 
 // ===== AUTHENTICATION FUNCTIONS =====
