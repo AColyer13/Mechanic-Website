@@ -900,15 +900,28 @@
                             }
                             resultDiv.innerHTML = '<div class="loading">Removing part from ticket...';
                             try {
-                                const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/remove-part/${partId}`, {
-                                    method: 'PUT'
-                                });
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                }
-                                resultDiv.innerHTML = `<div class="success">✅ Part removed from ticket!</div>`;
-                                document.getElementById('removePartTicketId').value = '';
-                                document.getElementById('removePartInventoryId').value = '';
+                                    const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}/remove-part/${partId}`, {
+                                        method: 'PUT'
+                                    });
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP error! status: ${response.status}`);
+                                    }
+                                    const data = await response.json();
+                                    console.log('removePart response:', data);
+                                    resultDiv.innerHTML = `<div class="success">✅ Part removed from ticket!</div>`;
+                                    document.getElementById('removePartTicketId').value = '';
+                                    document.getElementById('removePartInventoryId').value = '';
+
+                                    // Refresh tickets list and ensure it's visible so the parts update is shown
+                                    try {
+                                        await getAllTickets(false);
+                                    } catch (e) {
+                                        console.warn('Failed to refresh tickets after removing part:', e);
+                                    }
+                                    ticketsVisible = true;
+                                    const tbtn = document.getElementById('toggle-tickets-btn');
+                                    if (tbtn) tbtn.textContent = 'Hide';
+                                    if (domElements && domElements.ticketsList) domElements.ticketsList.style.display = '';
                             } catch (error) {
                                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
                             }
@@ -931,9 +944,22 @@
                                 if (!response.ok) {
                                     throw new Error(`HTTP error! status: ${response.status}`);
                                 }
+                                const data = await response.json();
+                                console.log('addPart response:', data);
                                 resultDiv.innerHTML = `<div class="success">✅ Part added to ticket!</div>`;
                                 document.getElementById('addPartTicketId').value = '';
                                 document.getElementById('addPartInventoryId').value = '';
+
+                                // Refresh tickets list and ensure it's visible so the parts update is shown
+                                try {
+                                    await getAllTickets(false);
+                                } catch (e) {
+                                    console.warn('Failed to refresh tickets after adding part:', e);
+                                }
+                                ticketsVisible = true;
+                                const tbtn = document.getElementById('toggle-tickets-btn');
+                                if (tbtn) tbtn.textContent = 'Hide';
+                                if (domElements && domElements.ticketsList) domElements.ticketsList.style.display = '';
                             } catch (error) {
                                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
                             }
