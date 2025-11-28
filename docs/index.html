@@ -780,15 +780,7 @@
                 <div id="create-ticket-result"></div>
             </div>
             
-            <div class="section">
-                <h2>Get Ticket by Service Ticket ID</h2>
-                <div class="form-group">
-                    <label for="getTicketId">Ticket ID:</label>
-                    <input type="number" id="getTicketId" placeholder="1">
-                </div>
-                <button onclick="getTicketById()">Get Ticket</button>
-                <div id="get-ticket-result" class="results"></div>
-            </div>
+            <!-- Single-ticket detail view removed: parts are shown directly in ticket list cards -->
             
             <div class="section">
                 <h2>Update Service Ticket</h2>
@@ -919,12 +911,6 @@
                                     const tbtn = document.getElementById('toggle-tickets-btn');
                                     if (tbtn) tbtn.textContent = 'Hide';
                                     if (domElements && domElements.ticketsList) domElements.ticketsList.style.display = '';
-                                    // Auto-open ticket details so user can confirm parts were removed
-                                    try {
-                                        await viewTicketDetails(ticketId);
-                                    } catch (e) {
-                                        console.warn('Failed to auto-open ticket details after removing part:', e);
-                                    }
                             } catch (error) {
                                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
                             }
@@ -960,12 +946,6 @@
                                 const tbtn = document.getElementById('toggle-tickets-btn');
                                 if (tbtn) tbtn.textContent = 'Hide';
                                 if (domElements && domElements.ticketsList) domElements.ticketsList.style.display = '';
-                                // If the ticket card exists now, fetch and show its details
-                                try {
-                                    await viewTicketDetails(ticketId);
-                                } catch (e) {
-                                    console.warn('Failed to auto-open ticket details after adding part:', e);
-                                }
                             } catch (error) {
                                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
                             }
@@ -1069,6 +1049,9 @@
                     data = await parseResponse(response, `retrieving all ${type}`);
                     preloadedData[type] = data;
                 }
+                if (type === 'tickets') {
+                    await fetchPartsForTickets(data);
+                }
                 if (!data || data.length === 0) {
                     resultDiv.innerHTML = '<div class="error">No data found.</div>';
                     return;
@@ -1123,6 +1106,7 @@
                     if (Array.isArray(item.parts) && item.parts.length) parts = item.parts;
                     else if (Array.isArray(item.inventory) && item.inventory.length) parts = item.inventory;
                     else if (Array.isArray(item.items) && item.items.length) parts = item.items;
+                    else if (Array.isArray(item.inventory_parts) && item.inventory_parts.length) parts = item.inventory_parts;
 
                     let partsHtml = '';
                     if (parts.length) {
@@ -1149,12 +1133,34 @@
                         ${partsHtml}
                         ${item.estimated_cost ? `<p><b>Estimated Cost:</b> $${item.estimated_cost.toFixed(2)}</p>` : ''}
                         ${item.actual_cost ? `<p><b>Actual Cost:</b> $${item.actual_cost.toFixed(2)}</p>` : ''}
-                        <div id="ticket-detail-${item.id}"></div>
-                        <div style="margin-top:8px;"><button onclick="viewTicketDetails(${item.id})">View Details</button></div>
                     </div>`;
                 }
             };
             return data.map(renderers[type]).join('');
+        }
+
+        // ===== FETCH PARTS FOR TICKETS IF NOT PRESENT =====
+        function hasParts(ticket) {
+            return (Array.isArray(ticket.parts) && ticket.parts.length) ||
+                   (Array.isArray(ticket.inventory) && ticket.inventory.length) ||
+                   (Array.isArray(ticket.items) && ticket.items.length) ||
+                   (Array.isArray(ticket.inventory_parts) && ticket.inventory_parts.length);
+        }
+
+        async function fetchPartsForTickets(tickets) {
+            const promises = tickets.map(async ticket => {
+                if (!hasParts(ticket)) {
+                    try {
+                        const response = await fetch(`${getApiUrl()}/service-tickets/${ticket.id}`);
+                        const detail = await parseResponse(response, 'fetching ticket detail for parts');
+                        // Assume the detail has inventory_parts
+                        ticket.inventory_parts = detail.inventory_parts || [];
+                    } catch (e) {
+                        console.warn('Failed to fetch parts for ticket', ticket.id, e);
+                    }
+                }
+            });
+            await Promise.all(promises);
         }
 
         // ===== REFRESH DATA =====
@@ -1329,6 +1335,8 @@
                 
                 const data = await parseResponse(response, 'fetching login result');
                 
+                await fetchPartsForTickets(data);
+                
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No tickets found.</p>';
                     return;
@@ -1344,6 +1352,7 @@
                     if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
                     else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
                     else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
+                    else if (Array.isArray(ticket.inventory_parts) && ticket.inventory_parts.length) parts = ticket.inventory_parts;
 
                     let partsHtml = '';
                     if (parts.length) {
@@ -1367,8 +1376,6 @@
                             ${partsHtml}
                             ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
                             ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
-                            <div id="ticket-detail-${ticket.id}"></div>
-                            <div style="margin-top:8px;"><button onclick="viewTicketDetails(${ticket.id})">View Details</button></div>
                         </div>
                     `;
                 });
@@ -2035,58 +2042,7 @@
             }
         }
 
-        async function getTicketById() {
-            const resultDiv = document.getElementById('get-ticket-result');
-            const ticketId = document.getElementById('getTicketId').value;
-            
-            if (!ticketId) {
-                resultDiv.innerHTML = '<div class="error">Please enter a ticket ID!</div>';
-                return;
-            }
-            
-            resultDiv.innerHTML = '<div class="loading">Loading ticket...</div>';
-            
-            try {
-                const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const ticket = await response.json();
-                const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
-                    ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
-                    : 'Not specified';
-                const customerName = ticket.customer 
-                    ? `${ticket.customer.first_name} ${ticket.customer.last_name}`
-                    : `Customer ID: ${ticket.customer_id}`;
-                const mechanicsList = ticket.mechanics && ticket.mechanics.length > 0
-                    ? ticket.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
-                    : 'Not assigned';
-                // Parts rendering
-                let partsHtml = '';
-                if (ticket.parts && Array.isArray(ticket.parts) && ticket.parts.length > 0) {
-                    partsHtml = `<p><b>Parts:</b> ` + ticket.parts.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
-                } else if (ticket.inventory && Array.isArray(ticket.inventory) && ticket.inventory.length > 0) {
-                    partsHtml = `<p><b>Parts:</b> ` + ticket.inventory.map(p => `${p.name || p.part_name || 'Part'} (ID: ${p.id}${p.quantity ? ', Qty: ' + p.quantity : ''})`).join(', ') + `</p>`;
-                }
-                resultDiv.style.display = '';
-                resultDiv.innerHTML = `
-                    <div class="data-card">
-                        <h3>Ticket #${ticket.id}</h3>
-                        <p><b>Vehicle:</b> ${vehicleInfo}</p>
-                        ${ticket.vehicle_vin ? `<p><b>VIN:</b> ${ticket.vehicle_vin}</p>` : ''}
-                        <p><b>Description:</b> ${ticket.description}</p>
-                        <p><b>Status:</b> ${ticket.status || 'Open'}</p>
-                        <p><b>Customer:</b> ${customerName}</p>
-                        <p><b>Mechanic(s):</b> ${mechanicsList}</p>
-                        ${partsHtml}
-                        ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                        ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
-                    </div>
-                `;
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
+        // Single-ticket detail function removed: parts are shown inline in ticket cards instead
 
         async function updateServiceTicket() {
             const resultDiv = document.getElementById('update-ticket-result');
@@ -2262,6 +2218,8 @@
                 
                 const data = await response.json();
                 
+                await fetchPartsForTickets(data);
+                
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No tickets found for this customer.</p>';
                     return;
@@ -2277,6 +2235,7 @@
                     if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
                     else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
                     else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
+                    else if (Array.isArray(ticket.inventory_parts) && ticket.inventory_parts.length) parts = ticket.inventory_parts;
 
                     let partsHtml = '';
                     if (parts.length) {
@@ -2299,8 +2258,6 @@
                             <p><b>Status:</b> ${ticket.status || 'Open'}</p>
                             ${partsHtml}
                             ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                            <div id="ticket-detail-${ticket.id}"></div>
-                            <div style="margin-top:8px;"><button onclick="viewTicketDetails(${ticket.id})">View Details</button></div>
                         </div>
                     `;
                 });
@@ -2332,6 +2289,8 @@
                 
                 const data = await response.json();
                 
+                await fetchPartsForTickets(data);
+                
                 if (data.length === 0) {
                     resultDiv.innerHTML = '<p>No tickets found for this mechanic.</p>';
                     return;
@@ -2351,6 +2310,7 @@
                     if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
                     else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
                     else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
+                    else if (Array.isArray(ticket.inventory_parts) && ticket.inventory_parts.length) parts = ticket.inventory_parts;
 
                     let partsHtml = '';
                     if (parts.length) {
@@ -2374,8 +2334,6 @@
                             <p><b>Status:</b> ${ticket.status || 'Open'}</p>
                             ${partsHtml}
                             ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                            <div id="ticket-detail-${ticket.id}"></div>
-                            <div style="margin-top:8px;"><button onclick="viewTicketDetails(${ticket.id})">View Details</button></div>
                         </div>
                     `;
                 });
@@ -2384,64 +2342,6 @@
                 resultDiv.innerHTML = html;
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-            }
-        }
-
-        // Fetch and render full ticket details into the ticket card (helps when list endpoint omits parts)
-        async function viewTicketDetails(ticketId) {
-            const container = document.getElementById(`ticket-detail-${ticketId}`);
-            if (!container) return;
-            container.innerHTML = '<div class="loading">Loading ticket details...</div>';
-            try {
-                const response = await fetch(`${getApiUrl()}/service-tickets/${ticketId}`);
-                const ticket = await parseResponse(response, 'fetching ticket details');
-
-                const vehicleInfo = ticket.vehicle_year || ticket.vehicle_make || ticket.vehicle_model
-                    ? `${ticket.vehicle_year || ''} ${ticket.vehicle_make || ''} ${ticket.vehicle_model || ''}`.trim()
-                    : 'Not specified';
-                const customerName = ticket.customer 
-                    ? `${ticket.customer.first_name} ${ticket.customer.last_name}`
-                    : `Customer ID: ${ticket.customer_id}`;
-                const mechanicsList = ticket.mechanics && ticket.mechanics.length > 0
-                    ? ticket.mechanics.map(m => `${m.first_name} ${m.last_name}`).join(', ')
-                    : 'Not assigned';
-
-                // Flexible parts detection
-                let parts = [];
-                if (Array.isArray(ticket.parts) && ticket.parts.length) parts = ticket.parts;
-                else if (Array.isArray(ticket.inventory) && ticket.inventory.length) parts = ticket.inventory;
-                else if (Array.isArray(ticket.items) && ticket.items.length) parts = ticket.items;
-
-                let partsHtml = '';
-                if (parts.length) {
-                    partsHtml = '<ul style="margin:0.25rem 0 0 1.25rem;">' + parts.map(p => {
-                        const name = p.name || p.part_name || p.item_name || 'Part';
-                        const qty = p.quantity || p.qty || p.count || '';
-                        const price = p.price || p.unit_price || p.part_price || '';
-                        const qtyLabel = qty ? `, Qty: ${qty}` : '';
-                        const priceLabel = (typeof price === 'number' && !Number.isNaN(price)) ? ` — $${price.toFixed(2)}` : '';
-                        return `<li>${name} (ID: ${p.id || p.inventory_id || ''}${qtyLabel})${priceLabel}</li>`;
-                    }).join('') + '</ul>';
-                } else {
-                    partsHtml = '<p><i>No parts detailed by the API for this ticket.</i></p>';
-                }
-
-                const html = `
-                    <div style="margin-top:0.75rem; padding:0.75rem; background:#fff; border-radius:6px; border:1px solid #eee;">
-                        <p><b>Vehicle:</b> ${vehicleInfo}</p>
-                        ${ticket.vehicle_vin ? `<p><b>VIN:</b> ${ticket.vehicle_vin}</p>` : ''}
-                        <p><b>Description:</b> ${ticket.description}</p>
-                        <p><b>Status:</b> ${ticket.status || 'Open'}</p>
-                        <p><b>Customer:</b> ${customerName}</p>
-                        <p><b>Mechanic(s):</b> ${mechanicsList}</p>
-                        <div><b>Parts:</b>${partsHtml}</div>
-                        ${ticket.estimated_cost ? `<p><b>Estimated Cost:</b> $${ticket.estimated_cost.toFixed(2)}</p>` : ''}
-                        ${ticket.actual_cost ? `<p><b>Actual Cost:</b> $${ticket.actual_cost.toFixed(2)}</p>` : ''}
-                    </div>`;
-
-                container.innerHTML = html;
-            } catch (error) {
-                container.innerHTML = `<div class="error">Error loading details: ${error.message}</div>`;
             }
         }
 
